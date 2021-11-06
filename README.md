@@ -10,7 +10,7 @@ Let's Go Chat
 ## How to use
 
 ```
-go run ./cmd/main/main.go
+go run ./main.go
 ```
 
 ## License
