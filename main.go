@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"os"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-playground/validator/v10"
@@ -64,9 +65,15 @@ func (s *server) handleUserCreate() http.HandlerFunc {
 }
 
 func main() {
+	port := os.Getenv("PORT")
+
+	if port == "" {
+		log.Fatal("$PORT must be set")
+	}
+
 	srv := server{
 		router: chi.NewRouter(),
 	}
 	srv.routes()
-	log.Fatal(http.ListenAndServe("127.0.0.1:8080", srv.router))
+	log.Fatal(http.ListenAndServe("127.0.0.1:"+port, srv.router))
 }
