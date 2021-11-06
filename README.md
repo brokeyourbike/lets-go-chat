@@ -13,5 +13,11 @@ Let's Go Chat
 go run ./main.go
 ```
 
+or with `reflex`
+
+```
+reflex -r '\.go' -s -- sh -c "go run main.go"
+```
+
 ## License
 [Mozilla Public License v2.0](https://github.com/brokeyourbike/lets-go-chat/blob/main/LICENSE)
