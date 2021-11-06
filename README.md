@@ -10,13 +10,13 @@ Let's Go Chat
 ## How to use
 
 ```
-go run ./main.go
+PORT=8080 go run ./main.go
 ```
 
 or with `reflex`
 
 ```
-reflex -r '\.go' -s -- sh -c "go run main.go"
+PORT=8080 reflex -r '\.go' -s -- sh -c "go run main.go"
 ```
 
 ## License
