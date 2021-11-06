@@ -60,7 +60,7 @@ func (s *server) handleUserCreate() http.HandlerFunc {
 			return
 		}
 
-		s.respond(w, r, response{Id: uuid.New().String(), UserName: data.UserName}, http.StatusOK)
+		s.respond(w, r, response{Id: uuid.NewString(), UserName: data.UserName}, http.StatusOK)
 	}
 }
 
@@ -74,6 +74,8 @@ func main() {
 	srv := server{
 		router: chi.NewRouter(),
 	}
+
 	srv.routes()
+
 	log.Fatal(http.ListenAndServe("127.0.0.1:"+port, srv.router))
 }
