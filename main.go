@@ -74,7 +74,7 @@ func (s *server) handleUserCreate() http.HandlerFunc {
 		}
 
 		hashedPassword, _ := hasher.HashPassword(data.Password)
-		userId := s.users.AddUser(user.User{UserName: data.UserName, PasswordHash: hashedPassword})
+		userId := s.users.AddUser(uuid.NewString(), user.User{UserName: data.UserName, PasswordHash: hashedPassword})
 
 		s.respond(w, r, response{Id: userId, UserName: data.UserName}, http.StatusOK)
 	}

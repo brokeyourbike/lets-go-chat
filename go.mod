@@ -8,6 +8,7 @@ require (
 	github.com/go-chi/chi/v5 v5.0.5
 	github.com/go-playground/validator/v10 v10.9.0
 	github.com/google/uuid v1.3.0
+	github.com/matryer/is v1.4.0
 )
 
 require (

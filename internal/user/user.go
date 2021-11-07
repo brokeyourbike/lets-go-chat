@@ -2,8 +2,6 @@ package user
 
 import (
 	"fmt"
-
-	"github.com/google/uuid"
 )
 
 type User struct {
@@ -13,10 +11,9 @@ type User struct {
 
 type Users map[string]User
 
-func (u Users) AddUser(user User) string {
-	key := uuid.NewString()
-	u[key] = user
-	return key
+func (u Users) AddUser(id string, user User) string {
+	u[id] = user
+	return id
 }
 
 func (u Users) GetUserByUserName(userName string) (User, error) {
