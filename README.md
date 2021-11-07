@@ -10,13 +10,13 @@ Let's Go Chat
 ## How to use
 
 ```
-PORT=8080 go run ./main.go
+HOST=127.0.0.1 PORT=8080 go run ./main.go
 ```
 
 or with `reflex`
 
 ```
-PORT=8080 reflex -r '\.go' -s -- sh -c "go run main.go"
+HOST=127.0.0.1 PORT=8080 reflex -r '\.go' -s -- sh -c "go run main.go"
 ```
 
 ## License

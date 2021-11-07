@@ -120,6 +120,7 @@ func (s *server) handleUserLogin() http.HandlerFunc {
 }
 
 func main() {
+	host := os.Getenv("HOST")
 	port := os.Getenv("PORT")
 
 	if port == "" {
@@ -133,5 +134,5 @@ func main() {
 
 	srv.routes()
 
-	log.Fatal(http.ListenAndServe(":"+port, srv.router))
+	log.Fatal(http.ListenAndServe(host+":"+port, srv.router))
 }
