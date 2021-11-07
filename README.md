@@ -9,5 +9,9 @@ Let's Go Chat
 
 ## How to use
 
+```
+go run ./cmd/main/main.go
+```
+
 ## License
 [Mozilla Public License v2.0](https://github.com/brokeyourbike/lets-go-chat/blob/main/LICENSE)
