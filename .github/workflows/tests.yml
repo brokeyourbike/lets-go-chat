@@ -24,4 +24,13 @@ jobs:
       run: go build -v ./...
 
     - name: Test
-      run: go test -v ./...
+      run: go test -race -covermode=atomic -coverprofile=coverage.out -v ./...
+
+    - name: Upload coverage to codeclimate
+      uses: paambaati/codeclimate-action@v3.0.0
+      env:
+        CC_TEST_REPORTER_ID: ${{ secrets.CODECLIMATE_TOKEN }}
+      with:
+        coverageCommand: ''
+        prefix: 'github.com/brokeyourbike/lets-go-chat'
+        coverageLocations: ./coverage.out:gocov
