@@ -1,4 +1,4 @@
-// `hasher` package provides common functions for working with passwords.
+// Package hasher provides common functions for working with passwords.
 package hasher
 
 import "golang.org/x/crypto/bcrypt"
