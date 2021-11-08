@@ -81,7 +81,6 @@ func (u Users) HandleUserLogin() http.HandlerFunc {
 		Url string `json:"url"`
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
-
 		var data request
 
 		if json.NewDecoder(r.Body).Decode(&data) != nil {
@@ -90,7 +89,6 @@ func (u Users) HandleUserLogin() http.HandlerFunc {
 		}
 
 		user, err := u.repo.GetByUserName(data.UserName)
-
 		if err != nil {
 			http.Error(w, fmt.Sprintf("User with userName %s not found", data.UserName), http.StatusBadRequest)
 			return
