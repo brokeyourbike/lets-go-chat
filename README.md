@@ -10,7 +10,7 @@ Let's Go Chat
 ## How to use
 
 ```
-HOST=127.0.0.1 PORT=8080 go run ./main.go
+HOST=127.0.0.1 PORT=8080 go run main.go
 ```
 
 or with `reflex`
