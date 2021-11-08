@@ -4,12 +4,13 @@ import (
 	"fmt"
 
 	"github.com/brokeyourbike/lets-go-chat/models"
+	"github.com/google/uuid"
 )
 
-type Users map[string]models.User
+type Users map[uuid.UUID]models.User
 
 func (u Users) Create(user models.User) error {
-	u[user.Id.String()] = user
+	u[user.Id] = user
 	return nil
 }
 
