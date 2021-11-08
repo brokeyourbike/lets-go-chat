@@ -1,0 +1,121 @@
+openapi: 3.1.0
+info:
+  title: Fancy Golang chat
+  description: Just a simple chat service
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  version: 1.0.0
+servers:
+- url: /v1
+tags:
+- name: user
+  description: Operations about user
+paths:
+  /user:
+    post:
+      tags:
+      - user
+      summary: Register (create) user
+      operationId: createUser
+      requestBody:
+        description: Created user object
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateUserRequest'
+        required: true
+      responses:
+        200:
+          description: user created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateUserResponse'
+        400:
+          description: Bad request, empty username or id
+          content: {}
+        500:
+          description: Internal Server Error
+          content: {}
+      x-codegen-request-body-name: body
+  /user/login:
+    post:
+      tags:
+      - user
+      summary: Logs user into the system
+      operationId: loginUser
+      requestBody:
+        description: User credendials
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginUserRequest'
+        required: true
+      responses:
+        200:
+          description: successful operation, returns link to join chat
+          headers:
+            X-Rate-Limit:
+              description: calls per hour allowed by the user
+              schema:
+                type: integer
+                format: int32
+            X-Expires-After:
+              description: date in UTC when token expires
+              schema:
+                type: string
+                format: date-time
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginUserResonse'
+        400:
+          description: Invalid username/password
+          content: {}
+        500:
+          description: Internal Server Error
+          content: {}
+components:
+  schemas:
+    LoginUserRequest:
+      required:
+      - password
+      - userName
+      type: object
+      properties:
+        userName:
+          type: string
+          description: The user name for login
+        password:
+          type: string
+          description: The password for login in clear text
+    LoginUserResonse:
+      required:
+      - url
+      type: object
+      properties:
+        url:
+          type: string
+          description: A url for websoket API with a one-time token for starting chat
+          example: ws://fancy-chat.io/ws&token=one-time-token
+    CreateUserRequest:
+      required:
+      - password
+      - userName
+      type: object
+      properties:
+        userName:
+          minLength: 4
+          type: string
+        password:
+          minLength: 8
+          type: string
+    CreateUserResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        userName:
+          type: string
