@@ -54,12 +54,11 @@ func (u Users) HandleUserCreate() http.HandlerFunc {
 		}
 
 		hashedPassword, err := hasher.HashPassword(data.Password)
-
 		if err != nil {
 			http.Error(w, "Password cannot be hashed", http.StatusInternalServerError)
 		}
 
-		user := models.User{Id: uuid.New(), UserName: data.UserName, PasswordHash: hashedPassword}
+		user := models.User{ID: uuid.New(), UserName: data.UserName, PasswordHash: hashedPassword}
 
 		if u.repo.Create(user) != nil {
 			http.Error(w, "User cannot be created", http.StatusInternalServerError)
@@ -68,7 +67,7 @@ func (u Users) HandleUserCreate() http.HandlerFunc {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 
-		json.NewEncoder(w).Encode(response{Id: user.Id.String(), UserName: user.UserName})
+		json.NewEncoder(w).Encode(response{Id: user.ID.String(), UserName: user.UserName})
 	}
 }
 
