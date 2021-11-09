@@ -1,8 +1,6 @@
 package db
 
 import (
-	"errors"
-
 	"github.com/brokeyourbike/lets-go-chat/models"
 	"gorm.io/gorm"
 )
@@ -25,10 +23,5 @@ func (u *UsersRepo) Create(user models.User) error {
 func (u UsersRepo) GetByUserName(userName string) (models.User, error) {
 	var user models.User
 	result := u.db.Where("user_name = ?", userName).First(&user)
-
-	if errors.Is(result.Error, gorm.ErrRecordNotFound) {
-		return models.User{}, gorm.ErrRecordNotFound
-	}
-
-	return user, nil
+	return user, result.Error
 }
