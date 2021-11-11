@@ -2,10 +2,12 @@ package handlers
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"time"
 
+	"github.com/brokeyourbike/lets-go-chat/db"
 	"github.com/brokeyourbike/lets-go-chat/models"
 	"github.com/brokeyourbike/lets-go-chat/pkg/hasher"
 	"github.com/go-playground/validator/v10"
@@ -88,8 +90,14 @@ func (u Users) HandleUserLogin() http.HandlerFunc {
 		}
 
 		user, err := u.repo.GetByUserName(data.UserName)
-		if err != nil {
+
+		if errors.Is(err, db.ErrUserNotFound) {
 			http.Error(w, fmt.Sprintf("User with userName %s not found", data.UserName), http.StatusBadRequest)
+			return
+		}
+
+		if err != nil {
+			http.Error(w, fmt.Sprintf("Cannot query user with userName %s", data.UserName), http.StatusInternalServerError)
 			return
 		}
 

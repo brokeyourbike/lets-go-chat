@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/brokeyourbike/lets-go-chat/api/server"
 	"github.com/brokeyourbike/lets-go-chat/configurations"
@@ -13,18 +14,27 @@ import (
 )
 
 func main() {
+	if err := run(); err != nil {
+		fmt.Fprintf(os.Stderr, "%s\n", err)
+		os.Exit(1)
+	}
+}
+
+func run() error {
 	cfg := configurations.Config{}
 	if err := env.Parse(&cfg); err != nil {
-		fmt.Printf("%+v\n", err)
+		return fmt.Errorf("cannot parse config: %v", err)
 	}
 
 	orm, err := gorm.Open(postgres.Open(cfg.Database.Url), &gorm.Config{})
 	if err != nil {
-		fmt.Printf("%+v\n", err)
+		return fmt.Errorf("cannot connect to DB: %v", err)
 	}
 
 	orm.AutoMigrate(&models.User{})
 
 	srv := server.NewServer(chi.NewRouter(), orm)
 	srv.Handle(&cfg)
+
+	return nil
 }
