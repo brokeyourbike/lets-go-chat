@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.2.0](https://www.github.com/brokeyourbike/lets-go-chat/compare/v0.1.0...v0.2.0) (2021-11-11)
+
+
+### Features
+
+* use database ([e96ca09](https://www.github.com/brokeyourbike/lets-go-chat/commit/e96ca09bcae85c4a52810545cf137e897696eb59))
+
+
+### Bug Fixes
+
+* return appropriate error message ([6e05a89](https://www.github.com/brokeyourbike/lets-go-chat/commit/6e05a89fce53f8e48f2ac4d2b909f9a33d47387d))
+* simplify method ([7609c39](https://www.github.com/brokeyourbike/lets-go-chat/commit/7609c395e49fbea9f341a643efde807272a0d01d))
+
 ## [0.1.0](https://www.github.com/brokeyourbike/lets-go-chat/compare/v0.0.1...v0.1.0) (2021-11-08)
 
 
