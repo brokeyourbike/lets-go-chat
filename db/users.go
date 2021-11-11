@@ -1,25 +1,41 @@
 package db
 
 import (
-	"fmt"
+	"errors"
 
 	"github.com/brokeyourbike/lets-go-chat/models"
-	"github.com/google/uuid"
+	"gorm.io/gorm"
 )
 
-type Users map[uuid.UUID]models.User
+var ErrUserNotFound = errors.New("user not found")
 
-func (u Users) Create(user models.User) error {
-	u[user.Id] = user
-	return nil
+type UsersRepo struct {
+	db *gorm.DB
 }
 
-func (u Users) GetByUserName(userName string) (models.User, error) {
-	for _, user := range u {
-		if user.UserName == userName {
-			return user, nil
-		}
+func NewUsersRepo(db *gorm.DB) *UsersRepo {
+	return &UsersRepo{
+		db: db,
+	}
+}
+
+func (u *UsersRepo) Create(user models.User) error {
+	result := u.db.Create(&user)
+	return result.Error
+}
+
+func (u UsersRepo) GetByUserName(userName string) (models.User, error) {
+	var user models.User
+
+	err := u.db.Where("user_name = ?", userName).First(&user).Error
+
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return user, ErrUserNotFound
 	}
 
-	return models.User{}, fmt.Errorf("user: with UserName %v not found", userName)
+	if err != nil {
+		return user, err
+	}
+
+	return user, nil
 }
