@@ -8,6 +8,7 @@ import (
 	"github.com/brokeyourbike/lets-go-chat/configurations"
 	"github.com/brokeyourbike/lets-go-chat/db"
 	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
 	"gorm.io/gorm"
 )
 
@@ -28,6 +29,9 @@ func (s *server) Handle(config *configurations.Config) {
 
 func (s *server) routes() {
 	u := handlers.NewUsers(db.NewUsersRepo(s.db))
+
+	s.router.Use(middleware.Logger)
+	s.router.Use(middleware.Recoverer)
 
 	s.router.Post("/v1/user", u.HandleUserCreate())
 	s.router.Post("/v1/user/login", u.HandleUserLogin())
