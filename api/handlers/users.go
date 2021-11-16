@@ -109,7 +109,6 @@ func (u Users) HandleUserLogin() http.HandlerFunc {
 		url := fmt.Sprintf("ws://%s/ws?token=%s", r.Host, uuid.NewString())
 
 		w.Header().Set("Content-Type", "application/json")
-		w.Header().Set("X-Rate-Limit", "60")
 		w.Header().Set("X-Expires-After", time.Now().Add(time.Minute).UTC().String())
 		w.WriteHeader(http.StatusOK)
 

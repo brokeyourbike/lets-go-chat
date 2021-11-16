@@ -9,6 +9,7 @@ import (
 	"github.com/brokeyourbike/lets-go-chat/models"
 	"github.com/caarlos0/env/v6"
 	"github.com/go-chi/chi/v5"
+	mlimiter "github.com/ulule/limiter/v3/drivers/store/memory"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
@@ -33,7 +34,9 @@ func run() error {
 
 	orm.AutoMigrate(&models.User{})
 
-	srv := server.NewServer(chi.NewRouter(), orm)
+	limiter := mlimiter.NewStore()
+
+	srv := server.NewServer(chi.NewRouter(), &limiter, orm)
 	srv.Handle(&cfg)
 
 	return nil
