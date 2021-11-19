@@ -6,23 +6,23 @@ import (
 	"time"
 
 	"github.com/brokeyourbike/lets-go-chat/api/handlers"
+	"github.com/brokeyourbike/lets-go-chat/api/middlewares"
 	"github.com/brokeyourbike/lets-go-chat/configurations"
 	"github.com/brokeyourbike/lets-go-chat/db"
+	"github.com/eko/gocache/v2/cache"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
-	"github.com/ulule/limiter/v3"
-	mhttp "github.com/ulule/limiter/v3/drivers/middleware/stdlib"
 	"gorm.io/gorm"
 )
 
 type server struct {
-	router       *chi.Mux
-	limiterStore *limiter.Store
-	db           *gorm.DB
+	router *chi.Mux
+	cache  *cache.Cache
+	db     *gorm.DB
 }
 
-func NewServer(router *chi.Mux, limiterStore *limiter.Store, db *gorm.DB) *server {
-	s := server{router: router, limiterStore: limiterStore, db: db}
+func NewServer(router *chi.Mux, cache *cache.Cache, db *gorm.DB) *server {
+	s := server{router: router, cache: cache, db: db}
 	s.routes()
 	return &s
 }
@@ -32,15 +32,13 @@ func (s *server) Handle(config *configurations.Config) {
 }
 
 func (s *server) routes() {
+	rl := middlewares.NewRateLimit(middlewares.RateLimitOpts{Limit: 10, Period: time.Hour})
+
 	u := handlers.NewUsers(db.NewUsersRepo(s.db))
 
 	s.router.Use(middleware.Logger)
 	s.router.Use(middleware.Recoverer)
-	s.router.Use(mhttp.NewMiddleware(limiter.New(*s.limiterStore, limiter.Rate{
-		Period: time.Hour,
-		Limit:  100,
-	})).Handler)
 
 	s.router.Post("/v1/user", u.HandleUserCreate())
-	s.router.Post("/v1/user/login", u.HandleUserLogin())
+	s.router.Post("/v1/user/login", rl.Handle(u.HandleUserLogin()))
 }
