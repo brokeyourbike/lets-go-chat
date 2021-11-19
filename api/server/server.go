@@ -35,6 +35,7 @@ func (s *server) routes() {
 	rl := middlewares.NewRateLimit(middlewares.RateLimitOpts{Limit: 10, Period: time.Hour})
 
 	u := handlers.NewUsers(db.NewUsersRepo(s.db))
+	h := handlers.NewHub()
 
 	s.router.Use(middleware.Logger)
 	s.router.Use(middleware.Recoverer)
@@ -42,4 +43,5 @@ func (s *server) routes() {
 	s.router.Post("/v1/user", u.HandleUserCreate())
 	s.router.Post("/v1/user/login", rl.Handle(u.HandleUserLogin()))
 	s.router.Get("/v1/user/active", u.HandleUserActive())
+	s.router.Get("/v1/chat/ws.rtm.start", h.HandleChat())
 }
