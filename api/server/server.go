@@ -41,4 +41,5 @@ func (s *server) routes() {
 
 	s.router.Post("/v1/user", u.HandleUserCreate())
 	s.router.Post("/v1/user/login", rl.Handle(u.HandleUserLogin()))
+	s.router.Post("/v1/user/active", u.HandleUserActive())
 }

@@ -115,3 +115,13 @@ func (u Users) HandleUserLogin() http.HandlerFunc {
 		json.NewEncoder(w).Encode(response{Url: url})
 	}
 }
+
+func (u Users) HandleUserActive() http.HandlerFunc {
+	type response struct {
+		Count int `json:"count"`
+	}
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(response{Count: 0})
+	}
+}
