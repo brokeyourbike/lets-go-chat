@@ -67,8 +67,6 @@ func (u Users) HandleUserCreate() http.HandlerFunc {
 		}
 
 		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-
 		json.NewEncoder(w).Encode(response{Id: user.ID.String(), UserName: user.UserName})
 	}
 }
@@ -110,8 +108,6 @@ func (u Users) HandleUserLogin() http.HandlerFunc {
 
 		w.Header().Set("Content-Type", "application/json")
 		w.Header().Set("X-Expires-After", time.Now().Add(time.Minute).UTC().String())
-		w.WriteHeader(http.StatusOK)
-
 		json.NewEncoder(w).Encode(response{Url: url})
 	}
 }
