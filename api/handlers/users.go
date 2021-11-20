@@ -154,7 +154,7 @@ func (u *Users) HandleChat() http.HandlerFunc {
 		}
 
 		token, err := u.tokensRepo.Get(t)
-		if errors.Is(err, db.ErrUserNotFound) {
+		if errors.Is(err, db.ErrTokenNotFound) {
 			http.Error(w, "Token invalid", http.StatusBadRequest)
 			return
 		}
