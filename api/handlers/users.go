@@ -164,6 +164,11 @@ func (u *Users) HandleChat() http.HandlerFunc {
 			return
 		}
 
+		if token.ExpiresAt.Before(time.Now()) {
+			http.Error(w, "Token expired", http.StatusBadRequest)
+			return
+		}
+
 		u.tokensRepo.InvalidateByUserId(token.UserID)
 		u.activeUsersRepo.Add(token.UserID)
 
