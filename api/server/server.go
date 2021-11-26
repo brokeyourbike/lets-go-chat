@@ -35,6 +35,7 @@ func (s *server) routes() {
 	u := handlers.NewUsers(db.NewUsersRepo(s.db), cache.NewActiveUsersRepo(), db.NewTokensRepo(s.db))
 
 	s.router.Use(middlewares.Logger)
+	s.router.Use(middlewares.ErrorLogger)
 	s.router.Use(middlewares.Recoverer)
 
 	s.router.Post("/v1/user", u.HandleUserCreate())
