@@ -9,22 +9,18 @@ import (
 	"github.com/brokeyourbike/lets-go-chat/models"
 	"github.com/caarlos0/env/v6"
 	"github.com/go-chi/chi/v5"
-	"github.com/sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
 
 func main() {
+	log.SetFormatter(&log.JSONFormatter{})
+
 	if err := run(); err != nil {
-		fmt.Fprintf(os.Stderr, "%s\n", err)
+		log.Fatalf("%s\n", err)
 		os.Exit(1)
 	}
-}
-
-func NewLogger() *logrus.Logger {
-	logger := logrus.New()
-	logger.SetFormatter(&logrus.JSONFormatter{})
-	return logger
 }
 
 func run() error {
@@ -41,7 +37,7 @@ func run() error {
 	orm.AutoMigrate(&models.User{})
 	orm.AutoMigrate(&models.Token{})
 
-	srv := server.NewServer(NewLogger(), chi.NewRouter(), orm)
+	srv := server.NewServer(chi.NewRouter(), orm)
 	srv.Handle(&cfg)
 
 	return nil

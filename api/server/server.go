@@ -1,7 +1,6 @@
 package server
 
 import (
-	"log"
 	"net/http"
 	"time"
 
@@ -11,18 +10,16 @@ import (
 	"github.com/brokeyourbike/lets-go-chat/configurations"
 	"github.com/brokeyourbike/lets-go-chat/db"
 	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/chi/v5/middleware"
-	"github.com/sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 )
 
 type server struct {
-	logger *logrus.Logger
 	router *chi.Mux
 	db     *gorm.DB
 }
 
-func NewServer(logger *logrus.Logger, router *chi.Mux, db *gorm.DB) *server {
+func NewServer(router *chi.Mux, db *gorm.DB) *server {
 	s := server{router: router, db: db}
 	s.routes()
 	return &s
@@ -37,8 +34,8 @@ func (s *server) routes() {
 
 	u := handlers.NewUsers(db.NewUsersRepo(s.db), cache.NewActiveUsersRepo(), db.NewTokensRepo(s.db))
 
-	s.router.Use(middleware.Logger)
-	s.router.Use(middlewares.Recoverer(s.logger))
+	s.router.Use(middlewares.Logger)
+	s.router.Use(middlewares.Recoverer)
 
 	s.router.Post("/v1/user", u.HandleUserCreate())
 	s.router.Post("/v1/user/login", rl.Handle(u.HandleUserLogin()))
