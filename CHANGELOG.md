@@ -1,5 +1,36 @@
 # Changelog
 
+## [0.3.0](https://www.github.com/brokeyourbike/lets-go-chat/compare/v0.2.0...v0.3.0) (2021-11-26)
+
+
+### Features
+
+* add `/v1/user/active` endpoint ([5df4ff4](https://www.github.com/brokeyourbike/lets-go-chat/commit/5df4ff4f2e8f9e2febf1306940e500bff1af1e4e))
+* add `ErrorLogger` ([b4f282f](https://www.github.com/brokeyourbike/lets-go-chat/commit/b4f282fddb079bedee78f9f2123e7287761aca94))
+* add `token` model ([008c54b](https://www.github.com/brokeyourbike/lets-go-chat/commit/008c54b6e5c182d15740e64df4cef7277373fc24))
+* add rate_limiter ([f9ac041](https://www.github.com/brokeyourbike/lets-go-chat/commit/f9ac041f92b79b365de6edad9ac4b157594697f0))
+* add request logger ([50b2f2f](https://www.github.com/brokeyourbike/lets-go-chat/commit/50b2f2fae1e00cd15ef0ddf01c08f832ae254763))
+* add tokens repo ([991566c](https://www.github.com/brokeyourbike/lets-go-chat/commit/991566c8a6e2e8e588aece05395b6276ec90294b))
+* add ws endpoint ([423c5be](https://www.github.com/brokeyourbike/lets-go-chat/commit/423c5be5ecf151e877778509bc6ecaf0ae148297))
+* allow users to chat ([af37af1](https://www.github.com/brokeyourbike/lets-go-chat/commit/af37af108947cab0ffb81a7dff0218780840dc03))
+
+
+### Bug Fixes
+
+* add rate limiter for all routes ([0fc248f](https://www.github.com/brokeyourbike/lets-go-chat/commit/0fc248f60906c5a3fb667db8871d2798ac73eff2))
+* cast respBody to string ([c955329](https://www.github.com/brokeyourbike/lets-go-chat/commit/c9553290c4284470d3a724f8d67ee46d8294462f))
+* do not allow expired tokens ([f666191](https://www.github.com/brokeyourbike/lets-go-chat/commit/f666191b1072ab53115f86f8e405df6be1224c53))
+* get method ([93a731a](https://www.github.com/brokeyourbike/lets-go-chat/commit/93a731a3baf5164ab993c0a717c4557301ec6779))
+* pass pointer ([da3d6c7](https://www.github.com/brokeyourbike/lets-go-chat/commit/da3d6c7183bf147964c1c0040e2235077df8a8a5))
+* remove redundant code ([5e45d93](https://www.github.com/brokeyourbike/lets-go-chat/commit/5e45d931660d4a03b9ba91dd3648aa0738fa34c0))
+* simplify recoverer ([9d1caec](https://www.github.com/brokeyourbike/lets-go-chat/commit/9d1caec6f9f9d4209d16ddc0003e3652cf682bb3))
+* tidy ([3abc7c9](https://www.github.com/brokeyourbike/lets-go-chat/commit/3abc7c96f4350957876fdb3c4ea5c7fea4bfacba))
+* use better method ([ae0a79f](https://www.github.com/brokeyourbike/lets-go-chat/commit/ae0a79f8649b08a2dc357adf9d0b243e642fbf17))
+* use in house recoverer ([fe3378f](https://www.github.com/brokeyourbike/lets-go-chat/commit/fe3378f5d32bba3d1246eb8e588fb9bd7a7a2d1f))
+* use logger and recoverer ([4c25b9e](https://www.github.com/brokeyourbike/lets-go-chat/commit/4c25b9e73728a4ee13ec885ff38e044a6ff322c4))
+* use new specs ([30037fd](https://www.github.com/brokeyourbike/lets-go-chat/commit/30037fd42cc36bd3fd1e6c35e50967578b9fbf77))
+* use proper error ([995c543](https://www.github.com/brokeyourbike/lets-go-chat/commit/995c543a5ddd439d0f46ac1f98729b5e407925a1))
+
 ## [0.2.0](https://www.github.com/brokeyourbike/lets-go-chat/compare/v0.1.0...v0.2.0) (2021-11-11)
 
 
