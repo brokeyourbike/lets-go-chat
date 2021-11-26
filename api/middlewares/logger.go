@@ -9,6 +9,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+// Logger is a middleware that logs the start and end of each request.
 func Logger(next http.Handler) http.Handler {
 	fn := func(w http.ResponseWriter, r *http.Request) {
 		log.WithFields(logRequestFields(r)).Infof("Request: %s %s", r.Method, r.URL.Path)
