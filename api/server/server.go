@@ -12,15 +12,17 @@ import (
 	"github.com/brokeyourbike/lets-go-chat/db"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 )
 
 type server struct {
+	logger *logrus.Logger
 	router *chi.Mux
 	db     *gorm.DB
 }
 
-func NewServer(router *chi.Mux, db *gorm.DB) *server {
+func NewServer(logger *logrus.Logger, router *chi.Mux, db *gorm.DB) *server {
 	s := server{router: router, db: db}
 	s.routes()
 	return &s
@@ -36,7 +38,7 @@ func (s *server) routes() {
 	u := handlers.NewUsers(db.NewUsersRepo(s.db), cache.NewActiveUsersRepo(), db.NewTokensRepo(s.db))
 
 	s.router.Use(middleware.Logger)
-	s.router.Use(middleware.Recoverer)
+	s.router.Use(middlewares.Recoverer(s.logger))
 
 	s.router.Post("/v1/user", u.HandleUserCreate())
 	s.router.Post("/v1/user/login", rl.Handle(u.HandleUserLogin()))
