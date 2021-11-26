@@ -1,13 +1,16 @@
 package server
 
 import (
-	"log"
 	"net/http"
+	"time"
 
 	"github.com/brokeyourbike/lets-go-chat/api/handlers"
+	"github.com/brokeyourbike/lets-go-chat/api/middlewares"
+	"github.com/brokeyourbike/lets-go-chat/cache"
 	"github.com/brokeyourbike/lets-go-chat/configurations"
 	"github.com/brokeyourbike/lets-go-chat/db"
 	"github.com/go-chi/chi/v5"
+	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 )
 
@@ -27,8 +30,16 @@ func (s *server) Handle(config *configurations.Config) {
 }
 
 func (s *server) routes() {
-	u := handlers.NewUsers(db.NewUsersRepo(s.db))
+	rl := middlewares.NewRateLimit(middlewares.RateLimitOpts{Limit: 10, Period: time.Hour})
+
+	u := handlers.NewUsers(db.NewUsersRepo(s.db), cache.NewActiveUsersRepo(), db.NewTokensRepo(s.db))
+
+	s.router.Use(middlewares.Logger)
+	s.router.Use(middlewares.ErrorLogger)
+	s.router.Use(middlewares.Recoverer)
 
 	s.router.Post("/v1/user", u.HandleUserCreate())
-	s.router.Post("/v1/user/login", u.HandleUserLogin())
+	s.router.Post("/v1/user/login", rl.Handle(u.HandleUserLogin()))
+	s.router.Get("/v1/user/active", u.HandleUserActive())
+	s.router.Get("/v1/chat/ws.rtm.start", u.HandleChat())
 }

@@ -1,4 +1,4 @@
-openapi: 3.1.0
+openapi: 3.0.1
 info:
   title: Fancy Golang chat
   description: Just a simple chat service
@@ -11,6 +11,8 @@ servers:
 tags:
 - name: user
   description: Operations about user
+- name: chat
+  description: Operations related to chat
 paths:
   /user:
     post:
@@ -76,6 +78,46 @@ paths:
         500:
           description: Internal Server Error
           content: {}
+  /user/active:
+    get:
+      tags:
+      - user
+      - chat
+      summary: Number of active users in a chat
+      operationId: getActiveUsers
+      responses:
+        200:
+          description: successful operation, returns number of active users
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ActiveUsersResponse'
+        500:
+          description: Internal Server Error
+          content: {}  
+  /chat/ws.rtm.start:
+    get:
+      tags:
+      - chat
+      summary: Endpoint to start real time chat
+      operationId: wsRTMStart
+      parameters:
+        - name: token
+          in: query
+          required: true
+          description: One time token for a loged user
+          schema:
+            type: string
+      responses:
+        101:
+          description: Upgrade to websocket protocol
+          content: {}
+        400:
+          description: Invalid token
+          content: {}
+        500:
+          description: Internal Server Error
+          content: {}  
 components:
   schemas:
     LoginUserRequest:
@@ -119,3 +161,10 @@ components:
           format: uuid
         userName:
           type: string
+    ActiveUsersResponse:
+      required:
+        - count
+      type: object
+      properties:
+        count:
+          type: integer

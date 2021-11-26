@@ -24,7 +24,7 @@ func (u *UsersRepo) Create(user models.User) error {
 	return result.Error
 }
 
-func (u UsersRepo) GetByUserName(userName string) (models.User, error) {
+func (u *UsersRepo) GetByUserName(userName string) (models.User, error) {
 	var user models.User
 
 	err := u.db.Where("user_name = ?", userName).First(&user).Error

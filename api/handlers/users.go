@@ -12,23 +12,39 @@ import (
 	"github.com/brokeyourbike/lets-go-chat/pkg/hasher"
 	"github.com/go-playground/validator/v10"
 	"github.com/google/uuid"
+	"github.com/gorilla/websocket"
 )
+
+var upgrader = websocket.Upgrader{}
 
 type UsersRepo interface {
 	Create(user models.User) error
 	GetByUserName(userName string) (models.User, error)
 }
 
+type ActiveUsersRepo interface {
+	Add(userId uuid.UUID) error
+	Delete(userId uuid.UUID) error
+	Count() int
+}
+
+type TokensRepo interface {
+	Create(token models.Token) error
+	Get(id uuid.UUID) (models.Token, error)
+	InvalidateByUserId(userId uuid.UUID) error
+}
+
 type Users struct {
-	repo UsersRepo
+	usersRepo       UsersRepo
+	activeUsersRepo ActiveUsersRepo
+	tokensRepo      TokensRepo
 }
 
-func NewUsers(r UsersRepo) *Users {
-	u := Users{repo: r}
-	return &u
+func NewUsers(u UsersRepo, a ActiveUsersRepo, t TokensRepo) *Users {
+	return &Users{usersRepo: u, activeUsersRepo: a, tokensRepo: t}
 }
 
-func (u Users) HandleUserCreate() http.HandlerFunc {
+func (u *Users) HandleUserCreate() http.HandlerFunc {
 	type request struct {
 		UserName string `json:"userName" validate:"required,min=4"`
 		Password string `json:"password" validate:"required,min=8"`
@@ -50,7 +66,7 @@ func (u Users) HandleUserCreate() http.HandlerFunc {
 			return
 		}
 
-		if _, err := u.repo.GetByUserName(data.UserName); err == nil {
+		if _, err := u.usersRepo.GetByUserName(data.UserName); err == nil {
 			http.Error(w, fmt.Sprintf("User with userName %s already exists", data.UserName), http.StatusBadRequest)
 			return
 		}
@@ -62,18 +78,16 @@ func (u Users) HandleUserCreate() http.HandlerFunc {
 
 		user := models.User{ID: uuid.New(), UserName: data.UserName, PasswordHash: hashedPassword}
 
-		if u.repo.Create(user) != nil {
+		if u.usersRepo.Create(user) != nil {
 			http.Error(w, "User cannot be created", http.StatusInternalServerError)
 		}
 
 		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-
 		json.NewEncoder(w).Encode(response{Id: user.ID.String(), UserName: user.UserName})
 	}
 }
 
-func (u Users) HandleUserLogin() http.HandlerFunc {
+func (u *Users) HandleUserLogin() http.HandlerFunc {
 	type request struct {
 		UserName string `json:"userName"`
 		Password string `json:"password"`
@@ -89,7 +103,7 @@ func (u Users) HandleUserLogin() http.HandlerFunc {
 			return
 		}
 
-		user, err := u.repo.GetByUserName(data.UserName)
+		user, err := u.usersRepo.GetByUserName(data.UserName)
 
 		if errors.Is(err, db.ErrUserNotFound) {
 			http.Error(w, fmt.Sprintf("User with userName %s not found", data.UserName), http.StatusBadRequest)
@@ -106,13 +120,77 @@ func (u Users) HandleUserLogin() http.HandlerFunc {
 			return
 		}
 
-		url := fmt.Sprintf("ws://%s/ws?token=%s", r.Host, uuid.NewString())
+		token := models.Token{ID: uuid.New(), UserID: user.ID, ExpiresAt: time.Now().Add(time.Minute)}
 
+		if u.tokensRepo.Create(token) != nil {
+			http.Error(w, "Cannot create token for user", http.StatusInternalServerError)
+			return
+		}
+
+		url := fmt.Sprintf("ws://%s/v1/chat/ws.rtm.start?token=%s", r.Host, token.ID.String())
+
+		w.Header().Set("X-Expires-After", token.ExpiresAt.UTC().String())
 		w.Header().Set("Content-Type", "application/json")
-		w.Header().Set("X-Rate-Limit", "60")
-		w.Header().Set("X-Expires-After", time.Now().Add(time.Minute).UTC().String())
-		w.WriteHeader(http.StatusOK)
-
 		json.NewEncoder(w).Encode(response{Url: url})
+	}
+}
+
+func (u *Users) HandleUserActive() http.HandlerFunc {
+	type response struct {
+		Count int `json:"count"`
+	}
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(response{Count: u.activeUsersRepo.Count()})
+	}
+}
+
+func (u *Users) HandleChat() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		t, err := uuid.Parse(r.URL.Query().Get("token"))
+		if err != nil {
+			http.Error(w, "Token format invalid", http.StatusBadRequest)
+			return
+		}
+
+		token, err := u.tokensRepo.Get(t)
+		if errors.Is(err, db.ErrTokenNotFound) {
+			http.Error(w, "Token invalid", http.StatusBadRequest)
+			return
+		}
+
+		if err != nil {
+			http.Error(w, "Token cannot be validated", http.StatusInternalServerError)
+			return
+		}
+
+		if token.ExpiresAt.Before(time.Now()) {
+			http.Error(w, "Token expired", http.StatusBadRequest)
+			return
+		}
+
+		u.tokensRepo.InvalidateByUserId(token.UserID)
+		u.activeUsersRepo.Add(token.UserID)
+
+		conn, err := upgrader.Upgrade(w, r, nil)
+		if err != nil {
+			http.Error(w, "Cannot upgrade request to websocket protocol", http.StatusInternalServerError)
+			return
+		}
+		defer conn.Close()
+		defer u.activeUsersRepo.Delete(token.UserID)
+
+		for {
+			mt, message, err := conn.ReadMessage()
+			if err != nil {
+				http.Error(w, "Cannot read message", http.StatusInternalServerError)
+				break
+			}
+			err = conn.WriteMessage(mt, message)
+			if err != nil {
+				http.Error(w, "Cannot write message", http.StatusInternalServerError)
+				break
+			}
+		}
 	}
 }
