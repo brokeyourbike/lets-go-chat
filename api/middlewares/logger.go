@@ -21,7 +21,7 @@ func Logger(next http.Handler) http.Handler {
 			log.WithFields(log.Fields{
 				"status":  ww.Status(),
 				"bytes":   ww.BytesWritten(),
-				"elapsed": float64(time.Since(t1).Nanoseconds()) / 1000000.0, // in milliseconds
+				"elapsed": float64(time.Since(t1).Milliseconds()),
 			}).Logf(statusLevel(ww.Status()), "Response: %d %s", ww.Status(), statusLabel(ww.Status()))
 		}()
 
