@@ -27,7 +27,7 @@ func ErrorLogger(next http.Handler) http.Handler {
 
 			log.WithFields(log.Fields{
 				"status": ww.Status(),
-			}).Log(statusLevel(ww.Status()), respBody)
+			}).Log(statusLevel(ww.Status()), string(respBody))
 		}()
 
 		next.ServeHTTP(ww, r)
