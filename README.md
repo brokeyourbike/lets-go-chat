@@ -23,7 +23,7 @@ HOST=127.0.0.1 PORT=8080 reflex -r '\.go' -s -- sh -c "go run main.go"
 ## DB
 
 ```bash
-docker run -it --rm --name go-postgres -p 5432:5432 -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=secret postgres:14.0
+docker run -it --rm --name go-postgres -p 5432:5432 -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=secret -e PGDATA=/var/lib/postgresql/data/pgdata -v ~/local-go-postgres:/var/lib/postgresql/data postgres:14.0
 ```
 
 ## License
