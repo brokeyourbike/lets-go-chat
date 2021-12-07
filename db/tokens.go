@@ -21,8 +21,8 @@ func NewTokensRepo(db *gorm.DB) *TokensRepo {
 }
 
 func (t *TokensRepo) Create(token models.Token) error {
-	result := t.db.Create(&token)
-	return result.Error
+	err := t.db.Create(&token).Error
+	return err
 }
 
 func (t *TokensRepo) Get(id uuid.UUID) (models.Token, error) {

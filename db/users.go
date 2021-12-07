@@ -20,8 +20,8 @@ func NewUsersRepo(db *gorm.DB) *UsersRepo {
 }
 
 func (u *UsersRepo) Create(user models.User) error {
-	result := u.db.Create(&user)
-	return result.Error
+	err := u.db.Create(&user).Error
+	return err
 }
 
 func (u *UsersRepo) GetByUserName(userName string) (models.User, error) {
