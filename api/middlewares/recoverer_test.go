@@ -12,9 +12,11 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func panicingHandler(http.ResponseWriter, *http.Request) { panic("foo") }
-
 func TestRecoverer(t *testing.T) {
+	panicingHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		panic("foo")
+	})
+
 	hook := test.NewGlobal()
 	r := chi.NewRouter()
 
@@ -34,4 +36,7 @@ func TestRecoverer(t *testing.T) {
 
 	assert.Equal(t, 1, len(hook.Entries))
 	assert.Equal(t, logrus.ErrorLevel, hook.LastEntry().Level)
+
+	_, exists := hook.LastEntry().Data["stacktrace"]
+	assert.True(t, exists)
 }
