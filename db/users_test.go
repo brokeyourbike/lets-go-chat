@@ -36,8 +36,9 @@ func (s *UsersSuite) Test_repository_Create_ItCanCreateUser() {
 		WillReturnResult(sqlmock.NewResult(1, 1))
 	s.mock.ExpectCommit()
 
-	err := s.repository.Create(user)
+	u, err := s.repository.Create(user)
 	require.NoError(s.T(), err)
+	require.Equal(s.T(), user, u)
 }
 
 func (s *UsersSuite) Test_repository_GetByUserName_ItCanReturnUserByUserName() {

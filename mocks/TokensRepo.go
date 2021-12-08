@@ -15,17 +15,24 @@ type TokensRepo struct {
 }
 
 // Create provides a mock function with given fields: token
-func (_m *TokensRepo) Create(token models.Token) error {
+func (_m *TokensRepo) Create(token models.Token) (models.Token, error) {
 	ret := _m.Called(token)
 
-	var r0 error
-	if rf, ok := ret.Get(0).(func(models.Token) error); ok {
+	var r0 models.Token
+	if rf, ok := ret.Get(0).(func(models.Token) models.Token); ok {
 		r0 = rf(token)
 	} else {
-		r0 = ret.Error(0)
+		r0 = ret.Get(0).(models.Token)
 	}
 
-	return r0
+	var r1 error
+	if rf, ok := ret.Get(1).(func(models.Token) error); ok {
+		r1 = rf(token)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }
 
 // Get provides a mock function with given fields: id

@@ -37,8 +37,9 @@ func (s *TokensSuite) Test_repository_Create_ItCanCreateToken() {
 		WillReturnResult(sqlmock.NewResult(1, 1))
 	s.mock.ExpectCommit()
 
-	err := s.repository.Create(token)
+	t, err := s.repository.Create(token)
 	require.NoError(s.T(), err)
+	require.Equal(s.T(), token, t)
 }
 
 func (s *TokensSuite) Test_repository_Get_ItCanReturnTokenById() {

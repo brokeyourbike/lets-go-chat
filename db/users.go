@@ -19,9 +19,9 @@ func NewUsersRepo(db *gorm.DB) *UsersRepo {
 	}
 }
 
-func (u *UsersRepo) Create(user models.User) error {
+func (u *UsersRepo) Create(user models.User) (models.User, error) {
 	err := u.db.Create(&user).Error
-	return err
+	return user, err
 }
 
 func (u *UsersRepo) GetByUserName(userName string) (models.User, error) {
