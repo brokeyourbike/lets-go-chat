@@ -4,8 +4,11 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/brokeyourbike/lets-go-chat/api/handlers"
 	"github.com/brokeyourbike/lets-go-chat/api/server"
+	"github.com/brokeyourbike/lets-go-chat/cache"
 	"github.com/brokeyourbike/lets-go-chat/configurations"
+	"github.com/brokeyourbike/lets-go-chat/db"
 	"github.com/brokeyourbike/lets-go-chat/models"
 	"github.com/caarlos0/env/v6"
 	"github.com/go-chi/chi/v5"
@@ -37,7 +40,10 @@ func run() error {
 	orm.AutoMigrate(&models.User{})
 	orm.AutoMigrate(&models.Token{})
 
-	srv := server.NewServer(chi.NewRouter(), orm)
+	users := handlers.NewUsers(db.NewUsersRepo(orm), cache.NewActiveUsersRepo(), db.NewTokensRepo(orm))
+
+	srv := server.NewServer(chi.NewRouter())
+	srv.Routes(users)
 	srv.Handle(&cfg)
 
 	return nil

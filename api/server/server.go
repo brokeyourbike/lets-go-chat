@@ -4,35 +4,38 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/brokeyourbike/lets-go-chat/api/handlers"
 	"github.com/brokeyourbike/lets-go-chat/api/middlewares"
-	"github.com/brokeyourbike/lets-go-chat/cache"
 	"github.com/brokeyourbike/lets-go-chat/configurations"
-	"github.com/brokeyourbike/lets-go-chat/db"
 	"github.com/go-chi/chi/v5"
 	log "github.com/sirupsen/logrus"
-	"gorm.io/gorm"
 )
+
+type UsersHandler interface {
+	HandleUserCreate() http.HandlerFunc
+	HandleUserLogin() http.HandlerFunc
+	HandleUserActive() http.HandlerFunc
+	HandleChat() http.HandlerFunc
+}
 
 type server struct {
 	router *chi.Mux
-	db     *gorm.DB
 }
 
-func NewServer(router *chi.Mux, db *gorm.DB) *server {
-	s := server{router: router, db: db}
-	s.routes()
+func NewServer(router *chi.Mux) *server {
+	s := server{router: router}
 	return &s
+}
+
+func (s *server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	s.router.ServeHTTP(w, r)
 }
 
 func (s *server) Handle(config *configurations.Config) {
 	log.Fatal(http.ListenAndServe(config.Host+":"+config.Port, s.router))
 }
 
-func (s *server) routes() {
+func (s *server) Routes(u UsersHandler) {
 	rl := middlewares.NewRateLimit(middlewares.RateLimitOpts{Limit: 10, Period: time.Hour})
-
-	u := handlers.NewUsers(db.NewUsersRepo(s.db), cache.NewActiveUsersRepo(), db.NewTokensRepo(s.db))
 
 	s.router.Use(middlewares.Logger)
 	s.router.Use(middlewares.ErrorLogger)
