@@ -34,5 +34,4 @@ func TestRecoverer(t *testing.T) {
 
 	assert.Equal(t, 1, len(hook.Entries))
 	assert.Equal(t, logrus.ErrorLevel, hook.LastEntry().Level)
-	hook.Reset()
 }
