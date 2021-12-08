@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 
@@ -66,8 +67,83 @@ func (s *UsersSuite) Test_users_HandleUserCreate() {
 	srv.Routes(s.users)
 	srv.ServeHTTP(w, req)
 
-	fmt.Print(w.Body.String())
 	require.Equal(s.T(), http.StatusOK, w.Result().StatusCode)
+	require.Contains(s.T(), w.Body.String(), payload.UserName)
+}
+
+func (s *UsersSuite) Test_users_HandleUserCreate_InvalidJson() {
+	tests := []struct {
+		name   string
+		json   string
+		status int
+	}{
+		{
+			name:   "json shold be valid",
+			json:   `{not a valid json}`,
+			status: http.StatusBadRequest,
+		},
+		{
+			name:   "username is required",
+			json:   `{"password":"12345678"}`,
+			status: http.StatusBadRequest,
+		},
+		{
+			name:   "username is required",
+			json:   `{"password":"12345678"}`,
+			status: http.StatusBadRequest,
+		},
+		{
+			name:   "password is required",
+			json:   `{"username":"john"}`,
+			status: http.StatusBadRequest,
+		},
+		{
+			name:   "username should be min 4 symbols",
+			json:   `{"username":"jo", "password":"12345678"}`,
+			status: http.StatusBadRequest,
+		},
+		{
+			name:   "password should be min 8 symbols",
+			json:   `{"username":"john", "password":"1234567"}`,
+			status: http.StatusBadRequest,
+		},
+	}
+
+	for _, tt := range tests {
+		s.T().Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			req := httptest.NewRequest(http.MethodPost, "/v1/user", strings.NewReader(tt.json))
+			w := httptest.NewRecorder()
+
+			srv := server.NewServer(chi.NewRouter())
+			srv.Routes(s.users)
+			srv.ServeHTTP(w, req)
+
+			require.Equal(s.T(), tt.status, w.Result().StatusCode)
+		})
+	}
+}
+
+func (s *UsersSuite) Test_users_HandleUserCreate_UserExist() {
+	payload := struct {
+		UserName string `json:"userName"`
+		Password string `json:"password"`
+	}{
+		UserName: "john",
+		Password: "12345678",
+	}
+
+	s.usersRepo.On("GetByUserName", payload.UserName).Return(models.User{}, nil)
+
+	req := httptest.NewRequest(http.MethodPost, "/v1/user", s.preparePayload(payload))
+	w := httptest.NewRecorder()
+
+	srv := server.NewServer(chi.NewRouter())
+	srv.Routes(s.users)
+	srv.ServeHTTP(w, req)
+
+	require.Equal(s.T(), http.StatusBadRequest, w.Result().StatusCode)
 	require.Contains(s.T(), w.Body.String(), payload.UserName)
 }
 
