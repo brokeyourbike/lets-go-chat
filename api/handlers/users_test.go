@@ -57,8 +57,10 @@ func (s *UsersSuite) Test_users_HandleUserCreate() {
 		Password: "12345678",
 	}
 
+	user := models.User{ID: uuid.New(), UserName: payload.UserName}
+
 	s.usersRepo.On("GetByUserName", payload.UserName).Return(models.User{}, errors.New("user not found"))
-	s.usersRepo.On("Create", mock.AnythingOfType("User")).Return(nil)
+	s.usersRepo.On("Create", mock.AnythingOfType("User")).Return(user, nil)
 
 	req := httptest.NewRequest(http.MethodPost, "/v1/user", s.preparePayload(payload))
 	w := httptest.NewRecorder()
@@ -68,7 +70,7 @@ func (s *UsersSuite) Test_users_HandleUserCreate() {
 	srv.ServeHTTP(w, req)
 
 	require.Equal(s.T(), http.StatusOK, w.Result().StatusCode)
-	require.Contains(s.T(), w.Body.String(), payload.UserName)
+	require.Contains(s.T(), w.Body.String(), user.ID.String())
 }
 
 func (s *UsersSuite) Test_users_HandleUserCreate_InvalidJson() {
@@ -157,9 +159,10 @@ func (s *UsersSuite) Test_users_HandleUserLogin() {
 	}
 
 	user := models.User{ID: uuid.New(), UserName: "john", PasswordHash: "$2a$04$hOGVri5G8ZLnrXtO/EP6keZkdzveoVGfh9krMXxeI/OP2QcSDJWOW"}
+	token := models.Token{ID: uuid.New(), UserID: user.ID, ExpiresAt: time.Now().Add(time.Minute)}
 
 	s.usersRepo.On("GetByUserName", payload.UserName).Return(user, nil)
-	s.tokensRepo.On("Create", mock.AnythingOfType("Token")).Return(nil)
+	s.tokensRepo.On("Create", mock.AnythingOfType("Token")).Return(token, nil)
 
 	req := httptest.NewRequest(http.MethodPost, "/v1/user/login", s.preparePayload(payload))
 	w := httptest.NewRecorder()
@@ -169,6 +172,7 @@ func (s *UsersSuite) Test_users_HandleUserLogin() {
 	srv.ServeHTTP(w, req)
 
 	require.Equal(s.T(), http.StatusOK, w.Result().StatusCode)
+	require.Equal(s.T(), token.ExpiresAt.UTC().String(), w.Result().Header.Get("X-Expires-After"))
 }
 
 func (s *UsersSuite) Test_users_HandleUserActive() {
