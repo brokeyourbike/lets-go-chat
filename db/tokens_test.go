@@ -14,7 +14,7 @@ import (
 )
 
 type TokensSuite struct {
-	TestSuite
+	Suite
 	repository *TokensRepo
 }
 

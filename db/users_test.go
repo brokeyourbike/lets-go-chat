@@ -13,7 +13,7 @@ import (
 )
 
 type UsersSuite struct {
-	TestSuite
+	Suite
 	repository *UsersRepo
 }
 

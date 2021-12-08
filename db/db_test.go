@@ -10,13 +10,13 @@ import (
 	"gorm.io/gorm"
 )
 
-type TestSuite struct {
+type Suite struct {
 	suite.Suite
 	db   *gorm.DB
 	mock sqlmock.Sqlmock
 }
 
-func (s *TestSuite) SetupDatabase() {
+func (s *Suite) SetupDatabase() {
 	var (
 		db  *sql.DB
 		err error
@@ -29,6 +29,6 @@ func (s *TestSuite) SetupDatabase() {
 	require.NoError(s.T(), err)
 }
 
-func (s *TestSuite) AfterTest(_, _ string) {
+func (s *Suite) AfterTest(_, _ string) {
 	require.NoError(s.T(), s.mock.ExpectationsWereMet())
 }
