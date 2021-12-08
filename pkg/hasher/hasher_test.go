@@ -29,6 +29,15 @@ func BenchmarkHashPassword(b *testing.B) {
 	}
 }
 
+func BenchmarkCheckPasswordHash(b *testing.B) {
+	password := "super-secret-password"
+	hash := "$2a$04$09IzQ3oawFacAKHjG7QFneYFIaxV2fCNy7RG63RlFKQd.1ChHU6Xa"
+
+	for n := 0; n < b.N; n++ {
+		CheckPasswordHash(password, hash)
+	}
+}
+
 func ExampleHashPassword() {
 	hashed, _ := HashPassword("super")
 	fmt.Println(hashed)
