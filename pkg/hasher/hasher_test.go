@@ -20,3 +20,10 @@ func TestCheckPasswordHash(t *testing.T) {
 
 	require.True(t, isValid)
 }
+
+func BenchmarkHashPassword(b *testing.B) {
+	password := "super-secret-password"
+	for n := 0; n < b.N; n++ {
+		HashPassword(password)
+	}
+}
