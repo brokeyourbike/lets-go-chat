@@ -1,7 +1,6 @@
 package db
 
 import (
-	"database/sql"
 	"regexp"
 	"testing"
 	"time"
@@ -11,34 +10,17 @@ import (
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
-	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
 
 type TokensSuite struct {
-	suite.Suite
-	db         *gorm.DB
-	mock       sqlmock.Sqlmock
+	TestSuite
 	repository *TokensRepo
 }
 
 func (s *TokensSuite) SetupTest() {
-	var (
-		db  *sql.DB
-		err error
-	)
-
-	db, s.mock, err = sqlmock.New()
-	require.NoError(s.T(), err)
-
-	s.db, err = gorm.Open(postgres.New(postgres.Config{Conn: db}), &gorm.Config{})
-	require.NoError(s.T(), err)
-
+	s.SetupDatabase()
 	s.repository = NewTokensRepo(s.db)
-}
-
-func (s *TokensSuite) AfterTest(_, _ string) {
-	require.NoError(s.T(), s.mock.ExpectationsWereMet())
 }
 
 func TestTokens(t *testing.T) {
