@@ -189,7 +189,73 @@ func (s *UsersSuite) Test_users_HandleUserActive() {
 	require.Equal(s.T(), "{\"count\":10}\n", w.Body.String())
 }
 
-func (s *UsersSuite) Test_users_HandleChat() {
+func (s *UsersSuite) Test_users_HandleChat_InvalidTokenFormat() {
+	tests := []struct {
+		name   string
+		token  string
+		status int
+	}{
+		{
+			name:   "token can not be empty",
+			token:  "",
+			status: http.StatusBadRequest,
+		},
+		{
+			name:   "token must be valid uuid",
+			token:  `not-uuid`,
+			status: http.StatusBadRequest,
+		},
+	}
+
+	for _, tt := range tests {
+		s.T().Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/v1/chat/ws.rtm.start?token=%s", tt.token), nil)
+			w := httptest.NewRecorder()
+
+			srv := server.NewServer(chi.NewRouter())
+			srv.Routes(s.users)
+			srv.ServeHTTP(w, req)
+
+			require.Equal(s.T(), tt.status, w.Result().StatusCode)
+		})
+	}
+}
+
+func (s *UsersSuite) Test_users_HandleChat_CannotValidateToken() {
+	tokenID := uuid.New()
+
+	s.tokensRepo.On("Get", tokenID).Return(models.Token{}, errors.New("cannot validate token"))
+
+	req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/v1/chat/ws.rtm.start?token=%s", tokenID.String()), nil)
+	w := httptest.NewRecorder()
+
+	srv := server.NewServer(chi.NewRouter())
+	srv.Routes(s.users)
+	srv.ServeHTTP(w, req)
+
+	require.Equal(s.T(), http.StatusInternalServerError, w.Result().StatusCode)
+	require.Equal(s.T(), "Token cannot be validated\n", w.Body.String())
+}
+
+func (s *UsersSuite) Test_users_HandleChat_TokenExpired() {
+	token := models.Token{ID: uuid.New(), UserID: uuid.New(), ExpiresAt: time.Now().Add(-time.Minute)}
+
+	s.tokensRepo.On("Get", token.ID).Return(token, nil)
+
+	req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/v1/chat/ws.rtm.start?token=%s", token.ID.String()), nil)
+	w := httptest.NewRecorder()
+
+	srv := server.NewServer(chi.NewRouter())
+	srv.Routes(s.users)
+	srv.ServeHTTP(w, req)
+
+	require.Equal(s.T(), http.StatusBadRequest, w.Result().StatusCode)
+	require.Equal(s.T(), "Token expired\n", w.Body.String())
+}
+
+func (s *UsersSuite) Test_users_HandleChat_RequestNotUpgradable() {
 	token := models.Token{ID: uuid.New(), UserID: uuid.New(), ExpiresAt: time.Now().Add(time.Minute)}
 
 	s.tokensRepo.On("Get", token.ID).Return(token, nil)
