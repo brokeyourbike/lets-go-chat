@@ -25,6 +25,9 @@ jobs:
         /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
         brew install mockery
 
+    - name: Generate mocks using mockery
+      run: mockery --all
+
     - name: Build
       run: go build -v ./...
 
