@@ -310,3 +310,26 @@ func (s *UsersSuite) Test_users_HandleChat() {
 		})
 	}
 }
+
+func (s *UsersSuite) Test_users_InvalidJson() {
+	cases := map[string]string{
+		"HandleUserCreate": "/v1/user",
+		"HandleUserLogin":  "/v1/user/login",
+	}
+
+	for name, url := range cases {
+		s.T().Run(name, func(t *testing.T) {
+			t.Parallel()
+
+			req := httptest.NewRequest(http.MethodPost, url, nil)
+			w := httptest.NewRecorder()
+
+			srv := server.NewServer(chi.NewRouter())
+			srv.Routes(s.users)
+			srv.ServeHTTP(w, req)
+
+			require.Equal(s.T(), http.StatusBadRequest, w.Result().StatusCode)
+			require.Equal(s.T(), "Invalid json\n", w.Body.String())
+		})
+	}
+}
