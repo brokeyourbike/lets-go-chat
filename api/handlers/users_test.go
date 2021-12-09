@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/brokeyourbike/lets-go-chat/api/server"
+	"github.com/brokeyourbike/lets-go-chat/db"
 	"github.com/brokeyourbike/lets-go-chat/mocks"
 	"github.com/brokeyourbike/lets-go-chat/models"
 	"github.com/go-chi/chi/v5"
@@ -90,11 +91,6 @@ func (s *UsersSuite) Test_users_HandleUserCreate_InvalidJson() {
 			status: http.StatusBadRequest,
 		},
 		{
-			name:   "username is required",
-			json:   `{"password":"12345678"}`,
-			status: http.StatusBadRequest,
-		},
-		{
 			name:   "password is required",
 			json:   `{"username":"john"}`,
 			status: http.StatusBadRequest,
@@ -149,6 +145,28 @@ func (s *UsersSuite) Test_users_HandleUserCreate_UserExist() {
 	require.Contains(s.T(), w.Body.String(), payload.UserName)
 }
 
+func (s *UsersSuite) Test_users_HandleUserCreate_CannotCreateUser() {
+	payload := struct {
+		UserName string `json:"userName"`
+		Password string `json:"password"`
+	}{
+		UserName: "john",
+		Password: "12345678",
+	}
+
+	s.usersRepo.On("GetByUserName", payload.UserName).Return(models.User{}, errors.New("user not found"))
+	s.usersRepo.On("Create", mock.AnythingOfType("User")).Return(models.User{}, errors.New("cannot create user"))
+
+	req := httptest.NewRequest(http.MethodPost, "/v1/user", s.preparePayload(payload))
+	w := httptest.NewRecorder()
+
+	srv := server.NewServer(chi.NewRouter())
+	srv.Routes(s.users)
+	srv.ServeHTTP(w, req)
+
+	require.Equal(s.T(), http.StatusInternalServerError, w.Result().StatusCode)
+}
+
 func (s *UsersSuite) Test_users_HandleUserLogin() {
 	payload := struct {
 		UserName string `json:"userName"`
@@ -173,6 +191,59 @@ func (s *UsersSuite) Test_users_HandleUserLogin() {
 
 	require.Equal(s.T(), http.StatusOK, w.Result().StatusCode)
 	require.Equal(s.T(), token.ExpiresAt.UTC().String(), w.Result().Header.Get("X-Expires-After"))
+}
+
+func (s *UsersSuite) Test_users_HandleUserLogin_InvalidJson() {
+	req := httptest.NewRequest(http.MethodPost, "/v1/user/login", strings.NewReader("{not a valid json}"))
+	w := httptest.NewRecorder()
+
+	srv := server.NewServer(chi.NewRouter())
+	srv.Routes(s.users)
+	srv.ServeHTTP(w, req)
+
+	require.Equal(s.T(), http.StatusBadRequest, w.Result().StatusCode)
+}
+
+func (s *UsersSuite) Test_users_HandleUserLogin_UserNotFound() {
+	payload := struct {
+		UserName string `json:"userName"`
+		Password string `json:"password"`
+	}{
+		UserName: "john",
+		Password: "12345678",
+	}
+
+	s.usersRepo.On("GetByUserName", payload.UserName).Return(models.User{}, db.ErrUserNotFound)
+
+	req := httptest.NewRequest(http.MethodPost, "/v1/user/login", s.preparePayload(payload))
+	w := httptest.NewRecorder()
+
+	srv := server.NewServer(chi.NewRouter())
+	srv.Routes(s.users)
+	srv.ServeHTTP(w, req)
+
+	require.Equal(s.T(), http.StatusBadRequest, w.Result().StatusCode)
+}
+
+func (s *UsersSuite) Test_users_HandleUserLogin_CannotQueryUser() {
+	payload := struct {
+		UserName string `json:"userName"`
+		Password string `json:"password"`
+	}{
+		UserName: "john",
+		Password: "12345678",
+	}
+
+	s.usersRepo.On("GetByUserName", payload.UserName).Return(models.User{}, errors.New("cannot query user"))
+
+	req := httptest.NewRequest(http.MethodPost, "/v1/user/login", s.preparePayload(payload))
+	w := httptest.NewRecorder()
+
+	srv := server.NewServer(chi.NewRouter())
+	srv.Routes(s.users)
+	srv.ServeHTTP(w, req)
+
+	require.Equal(s.T(), http.StatusInternalServerError, w.Result().StatusCode)
 }
 
 func (s *UsersSuite) Test_users_HandleUserActive() {
@@ -202,7 +273,7 @@ func (s *UsersSuite) Test_users_HandleChat_InvalidTokenFormat() {
 		},
 		{
 			name:   "token must be valid uuid",
-			token:  `not-uuid`,
+			token:  "not-uuid",
 			status: http.StatusBadRequest,
 		},
 	}
