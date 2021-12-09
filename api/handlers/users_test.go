@@ -75,50 +75,51 @@ func (s *UsersSuite) Test_users_HandleUserCreate() {
 }
 
 func (s *UsersSuite) Test_users_HandleUserCreate_InvalidJson() {
-	tests := []struct {
-		name   string
-		json   string
-		status int
+	table := map[string]struct {
+		payload    string
+		statusCode int
+		message    string
 	}{
-		{
-			name:   "json shold be valid",
-			json:   `{not a valid json}`,
-			status: http.StatusBadRequest,
+		"json shold be valid": {
+			payload:    `{not a valid json}`,
+			statusCode: http.StatusBadRequest,
+			message:    "Invalid json\n",
 		},
-		{
-			name:   "username is required",
-			json:   `{"password":"12345678"}`,
-			status: http.StatusBadRequest,
+		"username is required": {
+			payload:    `{"password":"12345678"}`,
+			statusCode: http.StatusBadRequest,
+			message:    "Invalid username or password\n",
 		},
-		{
-			name:   "password is required",
-			json:   `{"username":"john"}`,
-			status: http.StatusBadRequest,
+		"password is required": {
+			payload:    `{"username":"john"}`,
+			statusCode: http.StatusBadRequest,
+			message:    "Invalid username or password\n",
 		},
-		{
-			name:   "username should be min 4 symbols",
-			json:   `{"username":"jo", "password":"12345678"}`,
-			status: http.StatusBadRequest,
+		"username should be min 4 symbols": {
+			payload:    `{"username":"jo", "password":"12345678"}`,
+			statusCode: http.StatusBadRequest,
+			message:    "Invalid username or password\n",
 		},
-		{
-			name:   "password should be min 8 symbols",
-			json:   `{"username":"john", "password":"1234567"}`,
-			status: http.StatusBadRequest,
+		"password should be min 8 symbols": {
+			payload:    `{"username":"john", "password":"1234567"}`,
+			statusCode: http.StatusBadRequest,
+			message:    "Invalid username or password\n",
 		},
 	}
 
-	for _, tt := range tests {
-		s.T().Run(tt.name, func(t *testing.T) {
+	for name, tt := range table {
+		s.T().Run(name, func(t *testing.T) {
 			t.Parallel()
 
-			req := httptest.NewRequest(http.MethodPost, "/v1/user", strings.NewReader(tt.json))
+			req := httptest.NewRequest(http.MethodPost, "/v1/user", strings.NewReader(tt.payload))
 			w := httptest.NewRecorder()
 
 			srv := server.NewServer(chi.NewRouter())
 			srv.Routes(s.users)
 			srv.ServeHTTP(w, req)
 
-			require.Equal(s.T(), tt.status, w.Result().StatusCode)
+			require.Equal(s.T(), tt.statusCode, w.Result().StatusCode)
+			require.Equal(s.T(), tt.message, w.Body.String())
 		})
 	}
 }
