@@ -33,14 +33,11 @@ func preparePayload(t *testing.T, p interface{}) *bytes.Buffer {
 }
 
 func Test_users_HandleUserCreate(t *testing.T) {
-	usersRepo := new(mocks.UsersRepo)
-	users := NewUsers(usersRepo, nil, nil)
-
 	cases := map[string]struct {
 		payload    userPayload
 		statusCode int
 		message    string
-		setupMock  func()
+		setupMock  func(usersRepo *mocks.UsersRepo)
 	}{
 		"username is required": {
 			payload: userPayload{
@@ -48,7 +45,7 @@ func Test_users_HandleUserCreate(t *testing.T) {
 			},
 			statusCode: http.StatusBadRequest,
 			message:    "Invalid username or password\n",
-			setupMock:  func() {},
+			setupMock:  func(usersRepo *mocks.UsersRepo) {},
 		},
 		"password is required": {
 			payload: userPayload{
@@ -56,7 +53,7 @@ func Test_users_HandleUserCreate(t *testing.T) {
 			},
 			statusCode: http.StatusBadRequest,
 			message:    "Invalid username or password\n",
-			setupMock:  func() {},
+			setupMock:  func(usersRepo *mocks.UsersRepo) {},
 		},
 		"username should be min 4 symbols": {
 			payload: userPayload{
@@ -65,7 +62,7 @@ func Test_users_HandleUserCreate(t *testing.T) {
 			},
 			statusCode: http.StatusBadRequest,
 			message:    "Invalid username or password\n",
-			setupMock:  func() {},
+			setupMock:  func(usersRepo *mocks.UsersRepo) {},
 		},
 		"password should be min 8 symbols": {
 			payload: userPayload{
@@ -74,7 +71,7 @@ func Test_users_HandleUserCreate(t *testing.T) {
 			},
 			statusCode: http.StatusBadRequest,
 			message:    "Invalid username or password\n",
-			setupMock:  func() {},
+			setupMock:  func(usersRepo *mocks.UsersRepo) {},
 		},
 		"user will not be created if it's exists": {
 			payload: userPayload{
@@ -83,7 +80,7 @@ func Test_users_HandleUserCreate(t *testing.T) {
 			},
 			statusCode: http.StatusBadRequest,
 			message:    "User with userName john already exists\n",
-			setupMock: func() {
+			setupMock: func(usersRepo *mocks.UsersRepo) {
 				usersRepo.On("GetByUserName", "john").Return(models.User{}, nil)
 			},
 		},
@@ -94,7 +91,7 @@ func Test_users_HandleUserCreate(t *testing.T) {
 			},
 			statusCode: http.StatusInternalServerError,
 			message:    "User cannot be created\n",
-			setupMock: func() {
+			setupMock: func(usersRepo *mocks.UsersRepo) {
 				usersRepo.On("GetByUserName", "john").Return(models.User{}, errors.New("user not found"))
 				usersRepo.On("Create", mock.AnythingOfType("User")).Return(models.User{}, errors.New("cannot create user"))
 			},
@@ -106,7 +103,7 @@ func Test_users_HandleUserCreate(t *testing.T) {
 			},
 			statusCode: http.StatusOK,
 			message:    "{\"id\":\"50b470c4-223f-443b-b525-26be5e005063\",\"userName\":\"john\"}\n",
-			setupMock: func() {
+			setupMock: func(usersRepo *mocks.UsersRepo) {
 				u := models.User{ID: uuid.MustParse("50b470c4-223f-443b-b525-26be5e005063"), UserName: "john"}
 
 				usersRepo.On("GetByUserName", "john").Return(models.User{}, errors.New("user not found"))
@@ -118,7 +115,10 @@ func Test_users_HandleUserCreate(t *testing.T) {
 	for name, c := range cases {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
-			c.setupMock()
+
+			usersRepo := new(mocks.UsersRepo)
+			users := NewUsers(usersRepo, nil, nil)
+			c.setupMock(usersRepo)
 
 			req := httptest.NewRequest(http.MethodPost, "/v1/user", preparePayload(t, c.payload))
 			w := httptest.NewRecorder()
@@ -136,15 +136,11 @@ func Test_users_HandleUserCreate(t *testing.T) {
 }
 
 func Test_users_HandleUserLogin(t *testing.T) {
-	usersRepo := new(mocks.UsersRepo)
-	tokensRepo := new(mocks.TokensRepo)
-	users := NewUsers(usersRepo, nil, tokensRepo)
-
 	cases := map[string]struct {
 		payload    userPayload
 		statusCode int
 		message    string
-		setupMock  func()
+		setupMock  func(usersRepo *mocks.UsersRepo, tokensRepo *mocks.TokensRepo)
 	}{
 		"user can't login if it's not exists": {
 			payload: userPayload{
@@ -153,7 +149,7 @@ func Test_users_HandleUserLogin(t *testing.T) {
 			},
 			statusCode: http.StatusBadRequest,
 			message:    "User with userName john not found\n",
-			setupMock: func() {
+			setupMock: func(usersRepo *mocks.UsersRepo, tokensRepo *mocks.TokensRepo) {
 				usersRepo.On("GetByUserName", "john").Return(models.User{}, db.ErrUserNotFound)
 			},
 		},
@@ -164,7 +160,7 @@ func Test_users_HandleUserLogin(t *testing.T) {
 			},
 			statusCode: http.StatusInternalServerError,
 			message:    "Cannot query user with userName john\n",
-			setupMock: func() {
+			setupMock: func(usersRepo *mocks.UsersRepo, tokensRepo *mocks.TokensRepo) {
 				usersRepo.On("GetByUserName", "john").Return(models.User{}, errors.New("cannot query user"))
 			},
 		},
@@ -175,7 +171,7 @@ func Test_users_HandleUserLogin(t *testing.T) {
 			},
 			statusCode: http.StatusOK,
 			message:    "{\"url\":\"ws://example.com/v1/chat/ws.rtm.start?token=d0b61534-256c-4ef1-b98e-53c5424ce7cd\"}\n",
-			setupMock: func() {
+			setupMock: func(usersRepo *mocks.UsersRepo, tokensRepo *mocks.TokensRepo) {
 				u := models.User{ID: uuid.New(), UserName: "john", PasswordHash: "$2a$04$hOGVri5G8ZLnrXtO/EP6keZkdzveoVGfh9krMXxeI/OP2QcSDJWOW"}
 				t := models.Token{ID: uuid.MustParse("d0b61534-256c-4ef1-b98e-53c5424ce7cd"), UserID: u.ID, ExpiresAt: time.Now().Add(time.Minute)}
 
@@ -188,7 +184,11 @@ func Test_users_HandleUserLogin(t *testing.T) {
 	for name, c := range cases {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
-			c.setupMock()
+
+			usersRepo := new(mocks.UsersRepo)
+			tokensRepo := new(mocks.TokensRepo)
+			users := NewUsers(usersRepo, nil, tokensRepo)
+			c.setupMock(usersRepo, tokensRepo)
 
 			req := httptest.NewRequest(http.MethodPost, "/v1/user/login", preparePayload(t, c.payload))
 			w := httptest.NewRecorder()
@@ -226,33 +226,29 @@ func Test_users_HandleUserActive(t *testing.T) {
 }
 
 func Test_users_HandleChat(t *testing.T) {
-	activeUsersRepo := new(mocks.ActiveUsersRepo)
-	tokensRepo := new(mocks.TokensRepo)
-	users := NewUsers(nil, activeUsersRepo, tokensRepo)
-
 	cases := map[string]struct {
 		token      string
 		statusCode int
 		message    string
-		setupMock  func()
+		setupMock  func(activeUsersRepo *mocks.ActiveUsersRepo, tokensRepo *mocks.TokensRepo)
 	}{
 		"token can not be empty": {
 			token:      "",
 			statusCode: http.StatusBadRequest,
 			message:    "Token format invalid\n",
-			setupMock:  func() {},
+			setupMock:  func(activeUsersRepo *mocks.ActiveUsersRepo, tokensRepo *mocks.TokensRepo) {},
 		},
 		"token must be valid uuid": {
 			token:      "not-uuid",
 			statusCode: http.StatusBadRequest,
 			message:    "Token format invalid\n",
-			setupMock:  func() {},
+			setupMock:  func(activeUsersRepo *mocks.ActiveUsersRepo, tokensRepo *mocks.TokensRepo) {},
 		},
 		"token must exist": {
 			token:      "c0834646-95ce-4d71-9cc3-e54ae187d1b9",
 			statusCode: http.StatusBadRequest,
 			message:    "Token invalid\n",
-			setupMock: func() {
+			setupMock: func(activeUsersRepo *mocks.ActiveUsersRepo, tokensRepo *mocks.TokensRepo) {
 				id := uuid.MustParse("c0834646-95ce-4d71-9cc3-e54ae187d1b9")
 				tokensRepo.On("Get", id).Return(models.Token{}, db.ErrTokenNotFound)
 			},
@@ -261,7 +257,7 @@ func Test_users_HandleChat(t *testing.T) {
 			token:      "c0834646-95ce-4d71-9cc3-e54ae187d1b9",
 			statusCode: http.StatusInternalServerError,
 			message:    "Token cannot be validated\n",
-			setupMock: func() {
+			setupMock: func(activeUsersRepo *mocks.ActiveUsersRepo, tokensRepo *mocks.TokensRepo) {
 				id := uuid.MustParse("c0834646-95ce-4d71-9cc3-e54ae187d1b9")
 				tokensRepo.On("Get", id).Return(models.Token{}, errors.New("cannot quary token"))
 			},
@@ -270,7 +266,7 @@ func Test_users_HandleChat(t *testing.T) {
 			token:      "c0834646-95ce-4d71-9cc3-e54ae187d1b9",
 			statusCode: http.StatusBadRequest,
 			message:    "Token expired\n",
-			setupMock: func() {
+			setupMock: func(activeUsersRepo *mocks.ActiveUsersRepo, tokensRepo *mocks.TokensRepo) {
 				t := models.Token{
 					ID:        uuid.MustParse("c0834646-95ce-4d71-9cc3-e54ae187d1b9"),
 					UserID:    uuid.New(),
@@ -283,7 +279,7 @@ func Test_users_HandleChat(t *testing.T) {
 			token:      "c0834646-95ce-4d71-9cc3-e54ae187d1b9",
 			statusCode: http.StatusBadRequest,
 			message:    "Bad Request\nCannot upgrade request to websocket protocol\n",
-			setupMock: func() {
+			setupMock: func(activeUsersRepo *mocks.ActiveUsersRepo, tokensRepo *mocks.TokensRepo) {
 				t := models.Token{
 					ID:        uuid.MustParse("c0834646-95ce-4d71-9cc3-e54ae187d1b9"),
 					UserID:    uuid.New(),
@@ -292,6 +288,7 @@ func Test_users_HandleChat(t *testing.T) {
 				tokensRepo.On("Get", t.ID).Return(t, nil)
 				tokensRepo.On("InvalidateByUserId", t.UserID).Return(nil)
 				activeUsersRepo.On("Add", t.UserID).Return(nil)
+				activeUsersRepo.On("Delete", t.UserID).Return(nil)
 			},
 		},
 	}
@@ -299,7 +296,12 @@ func Test_users_HandleChat(t *testing.T) {
 	for name, c := range cases {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
-			c.setupMock()
+
+			activeUsersRepo := new(mocks.ActiveUsersRepo)
+			tokensRepo := new(mocks.TokensRepo)
+			users := NewUsers(nil, activeUsersRepo, tokensRepo)
+
+			c.setupMock(activeUsersRepo, tokensRepo)
 
 			req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/v1/chat/ws.rtm.start?token=%s", c.token), nil)
 			w := httptest.NewRecorder()
@@ -311,8 +313,8 @@ func Test_users_HandleChat(t *testing.T) {
 			require.Equal(t, c.statusCode, w.Result().StatusCode)
 			require.Equal(t, c.message, w.Body.String())
 
-			tokensRepo.AssertExpectations(t)
 			activeUsersRepo.AssertExpectations(t)
+			tokensRepo.AssertExpectations(t)
 		})
 	}
 }
