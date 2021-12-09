@@ -5,7 +5,6 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/go-chi/chi/v5"
 	"github.com/sirupsen/logrus"
 	"github.com/sirupsen/logrus/hooks/test"
 	"github.com/stretchr/testify/assert"
@@ -13,26 +12,17 @@ import (
 )
 
 func TestRecoverer(t *testing.T) {
-	panicingHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		panic("foo")
-	})
-
 	hook := test.NewGlobal()
-	r := chi.NewRouter()
 
-	r.Use(Recoverer)
-	r.Get("/", panicingHandler)
+	mw := Recoverer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		panic("foo")
+	}))
 
-	ts := httptest.NewServer(r)
-	defer ts.Close()
+	req := httptest.NewRequest(http.MethodGet, "/", nil)
+	w := httptest.NewRecorder()
+	mw.ServeHTTP(w, req)
 
-	req, err := http.NewRequest("GET", ts.URL+"/", nil)
-	require.NoError(t, err)
-
-	res, err := http.DefaultClient.Do(req)
-	require.NoError(t, err)
-
-	require.Equal(t, http.StatusInternalServerError, res.StatusCode)
+	require.Equal(t, http.StatusInternalServerError, w.Result().StatusCode)
 
 	assert.Equal(t, 1, len(hook.Entries))
 	assert.Equal(t, logrus.ErrorLevel, hook.LastEntry().Level)

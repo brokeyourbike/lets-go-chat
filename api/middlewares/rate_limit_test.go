@@ -7,28 +7,22 @@ import (
 	"testing"
 	"time"
 
-	"github.com/go-chi/chi/v5"
 	"github.com/stretchr/testify/require"
 )
 
 func TestRateLimit(t *testing.T) {
-	testHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
+	options := RateLimitOpts{Period: time.Hour, Limit: 100}
 
-	rl := NewRateLimit(RateLimitOpts{Period: time.Hour, Limit: 100})
-	require.Equal(t, time.Hour, rl.Limiter.Rate.Period)
-	require.Equal(t, int64(100), rl.Limiter.Rate.Limit)
+	mw := NewRateLimit(options)
+	require.Equal(t, options.Period, mw.Limiter.Rate.Period)
+	require.Equal(t, options.Limit, mw.Limiter.Rate.Limit)
 
-	r := chi.NewRouter()
-	r.Get("/", rl.Handle(testHandler))
+	req := httptest.NewRequest(http.MethodGet, "/", nil)
+	w := httptest.NewRecorder()
+	mw.Handle(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})).ServeHTTP(w, req)
 
-	ts := httptest.NewServer(r)
-	defer ts.Close()
+	res := w.Result()
 
-	req, err := http.NewRequest("GET", ts.URL+"/", nil)
-	require.NoError(t, err)
-
-	res, err := http.DefaultClient.Do(req)
-	require.NoError(t, err)
 	require.Equal(t, http.StatusOK, res.StatusCode)
 	require.Equal(t, "100", res.Header.Get("X-RateLimit-Limit"))
 	require.Equal(t, "99", res.Header.Get("X-RateLimit-Remaining"))
