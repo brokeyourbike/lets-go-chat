@@ -164,6 +164,32 @@ func Test_users_HandleUserLogin(t *testing.T) {
 				usersRepo.On("GetByUserName", "john").Return(models.User{}, errors.New("cannot query user"))
 			},
 		},
+		"user can't login if password is not valid": {
+			payload: userPayload{
+				UserName: "john",
+				Password: "not-a-valid-password",
+			},
+			statusCode: http.StatusBadRequest,
+			message:    "Invalid password\n",
+			setupMock: func(usersRepo *mocks.UsersRepo, tokensRepo *mocks.TokensRepo) {
+				u := models.User{ID: uuid.New(), UserName: "john", PasswordHash: "$2a$04$hOGVri5G8ZLnrXtO/EP6keZkdzveoVGfh9krMXxeI/OP2QcSDJWOW"}
+				usersRepo.On("GetByUserName", "john").Return(u, nil)
+			},
+		},
+		"user can't login is token was not created": {
+			payload: userPayload{
+				UserName: "john",
+				Password: "12345678",
+			},
+			statusCode: http.StatusInternalServerError,
+			message:    "Cannot create token for user\n",
+			setupMock: func(usersRepo *mocks.UsersRepo, tokensRepo *mocks.TokensRepo) {
+				u := models.User{ID: uuid.New(), UserName: "john", PasswordHash: "$2a$04$hOGVri5G8ZLnrXtO/EP6keZkdzveoVGfh9krMXxeI/OP2QcSDJWOW"}
+
+				usersRepo.On("GetByUserName", "john").Return(u, nil)
+				tokensRepo.On("Create", mock.AnythingOfType("Token")).Return(models.Token{}, errors.New("cannot create token"))
+			},
+		},
 		"user can login": {
 			payload: userPayload{
 				UserName: "john",
