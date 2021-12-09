@@ -64,18 +64,42 @@ func (s *UsersSuite) Test_users_HandleUserCreate() {
 	cases := map[string]struct {
 		payload    userPayload
 		statusCode int
+		message    string
 		setupMock  func()
 	}{
-		"user can be created": {
+		"username is required": {
 			payload: userPayload{
-				UserName: "john",
 				Password: "12345678",
 			},
-			statusCode: http.StatusOK,
-			setupMock: func() {
-				s.usersRepo.On("GetByUserName", "john").Return(models.User{}, errors.New("user not found"))
-				s.usersRepo.On("Create", mock.AnythingOfType("User")).Return(models.User{ID: uuid.New(), UserName: "john"}, nil)
+			statusCode: http.StatusBadRequest,
+			message:    "Invalid username or password\n",
+			setupMock:  func() {},
+		},
+		"password is required": {
+			payload: userPayload{
+				UserName: "john",
 			},
+			statusCode: http.StatusBadRequest,
+			message:    "Invalid username or password\n",
+			setupMock:  func() {},
+		},
+		"username should be min 4 symbols": {
+			payload: userPayload{
+				UserName: "joh",
+				Password: "12345678",
+			},
+			statusCode: http.StatusBadRequest,
+			message:    "Invalid username or password\n",
+			setupMock:  func() {},
+		},
+		"password should be min 8 symbols": {
+			payload: userPayload{
+				UserName: "john",
+				Password: "1234567",
+			},
+			statusCode: http.StatusBadRequest,
+			message:    "Invalid username or password\n",
+			setupMock:  func() {},
 		},
 		"user will not be created if it's exists": {
 			payload: userPayload{
@@ -83,6 +107,7 @@ func (s *UsersSuite) Test_users_HandleUserCreate() {
 				Password: "12345678",
 			},
 			statusCode: http.StatusBadRequest,
+			message:    "User with userName john already exists\n",
 			setupMock: func() {
 				s.usersRepo.On("GetByUserName", "john").Return(models.User{}, nil)
 			},
@@ -93,9 +118,24 @@ func (s *UsersSuite) Test_users_HandleUserCreate() {
 				Password: "12345678",
 			},
 			statusCode: http.StatusInternalServerError,
+			message:    "User cannot be created\n",
 			setupMock: func() {
 				s.usersRepo.On("GetByUserName", "john").Return(models.User{}, errors.New("user not found"))
 				s.usersRepo.On("Create", mock.AnythingOfType("User")).Return(models.User{}, errors.New("cannot create user"))
+			},
+		},
+		"user can be created": {
+			payload: userPayload{
+				UserName: "john",
+				Password: "12345678",
+			},
+			statusCode: http.StatusOK,
+			message:    "{\"id\":\"50b470c4-223f-443b-b525-26be5e005063\",\"userName\":\"john\"}\n",
+			setupMock: func() {
+				u := models.User{ID: uuid.MustParse("50b470c4-223f-443b-b525-26be5e005063"), UserName: "john"}
+
+				s.usersRepo.On("GetByUserName", "john").Return(models.User{}, errors.New("user not found"))
+				s.usersRepo.On("Create", mock.AnythingOfType("User")).Return(u, nil)
 			},
 		},
 	}
@@ -106,55 +146,6 @@ func (s *UsersSuite) Test_users_HandleUserCreate() {
 			c.setupMock()
 
 			req := httptest.NewRequest(http.MethodPost, "/v1/user", s.preparePayload(c.payload))
-			w := httptest.NewRecorder()
-
-			srv := server.NewServer(chi.NewRouter())
-			srv.Routes(s.users)
-			srv.ServeHTTP(w, req)
-
-			require.Equal(s.T(), c.statusCode, w.Result().StatusCode)
-		})
-	}
-}
-
-func (s *UsersSuite) Test_users_HandleUserCreate_InvalidJson() {
-	cases := map[string]struct {
-		payload    string
-		statusCode int
-		message    string
-	}{
-		"json shold be valid": {
-			payload:    `{not a valid json}`,
-			statusCode: http.StatusBadRequest,
-			message:    "Invalid json\n",
-		},
-		"username is required": {
-			payload:    `{"password":"12345678"}`,
-			statusCode: http.StatusBadRequest,
-			message:    "Invalid username or password\n",
-		},
-		"password is required": {
-			payload:    `{"username":"john"}`,
-			statusCode: http.StatusBadRequest,
-			message:    "Invalid username or password\n",
-		},
-		"username should be min 4 symbols": {
-			payload:    `{"username":"jo", "password":"12345678"}`,
-			statusCode: http.StatusBadRequest,
-			message:    "Invalid username or password\n",
-		},
-		"password should be min 8 symbols": {
-			payload:    `{"username":"john", "password":"1234567"}`,
-			statusCode: http.StatusBadRequest,
-			message:    "Invalid username or password\n",
-		},
-	}
-
-	for name, c := range cases {
-		s.T().Run(name, func(t *testing.T) {
-			t.Parallel()
-
-			req := httptest.NewRequest(http.MethodPost, "/v1/user", strings.NewReader(c.payload))
 			w := httptest.NewRecorder()
 
 			srv := server.NewServer(chi.NewRouter())

@@ -74,11 +74,13 @@ func (u *Users) HandleUserCreate() http.HandlerFunc {
 		hashedPassword, err := hasher.HashPassword(data.Password)
 		if err != nil {
 			http.Error(w, "Password cannot be hashed", http.StatusInternalServerError)
+			return
 		}
 
 		user, err := u.usersRepo.Create(models.User{ID: uuid.New(), UserName: data.UserName, PasswordHash: hashedPassword})
 		if err != nil {
 			http.Error(w, "User cannot be created", http.StatusInternalServerError)
+			return
 		}
 
 		w.Header().Set("Content-Type", "application/json")
