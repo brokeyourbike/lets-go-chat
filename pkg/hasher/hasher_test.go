@@ -46,4 +46,7 @@ func ExampleHashPassword() {
 func ExampleCheckPasswordHash() {
 	fmt.Println(CheckPasswordHash("super-secret-password", "$2a$04$09IzQ3oawFacAKHjG7QFneYFIaxV2fCNy7RG63RlFKQd.1ChHU6Xa"))
 	fmt.Println(CheckPasswordHash("super-secret-password", "not-a-hash"))
+	// Output:
+	// true
+	// false
 }
