@@ -226,10 +226,9 @@ func Test_users_HandleUserActive(t *testing.T) {
 }
 
 func Test_users_HandleChat(t *testing.T) {
-	usersRepo := new(mocks.UsersRepo)
 	activeUsersRepo := new(mocks.ActiveUsersRepo)
 	tokensRepo := new(mocks.TokensRepo)
-	users := NewUsers(usersRepo, activeUsersRepo, tokensRepo)
+	users := NewUsers(nil, activeUsersRepo, tokensRepo)
 
 	cases := map[string]struct {
 		token      string
@@ -255,7 +254,16 @@ func Test_users_HandleChat(t *testing.T) {
 			message:    "Token invalid\n",
 			setupMock: func() {
 				id := uuid.MustParse("c0834646-95ce-4d71-9cc3-e54ae187d1b9")
-				tokensRepo.On("Get", id).Return(models.Token{}, errors.New("cannot validate token"))
+				tokensRepo.On("Get", id).Return(models.Token{}, db.ErrTokenNotFound)
+			},
+		},
+		"token should be returned from the query": {
+			token:      "c0834646-95ce-4d71-9cc3-e54ae187d1b9",
+			statusCode: http.StatusInternalServerError,
+			message:    "Token cannot be validated\n",
+			setupMock: func() {
+				id := uuid.MustParse("c0834646-95ce-4d71-9cc3-e54ae187d1b9")
+				tokensRepo.On("Get", id).Return(models.Token{}, errors.New("cannot quary token"))
 			},
 		},
 		"token must not be expired": {
@@ -302,6 +310,9 @@ func Test_users_HandleChat(t *testing.T) {
 
 			require.Equal(t, c.statusCode, w.Result().StatusCode)
 			require.Equal(t, c.message, w.Body.String())
+
+			tokensRepo.AssertExpectations(t)
+			activeUsersRepo.AssertExpectations(t)
 		})
 	}
 }
