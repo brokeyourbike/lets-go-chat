@@ -22,6 +22,11 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
+type userPayload struct {
+	UserName string `json:"userName"`
+	Password string `json:"password"`
+}
+
 type UsersSuite struct {
 	suite.Suite
 	usersRepo       *mocks.UsersRepo
@@ -38,6 +43,12 @@ func (s *UsersSuite) SetupTest() {
 	s.users = NewUsers(s.usersRepo, s.activeUsersRepo, s.tokensRepo)
 }
 
+func (s *UsersSuite) AfterTest(_, _ string) {
+	require.True(s.T(), s.usersRepo.AssertExpectations(s.T()))
+	require.True(s.T(), s.activeUsersRepo.AssertExpectations(s.T()))
+	require.True(s.T(), s.tokensRepo.AssertExpectations(s.T()))
+}
+
 func TestUsers(t *testing.T) {
 	suite.Run(t, new(UsersSuite))
 }
@@ -50,32 +61,64 @@ func (s *UsersSuite) preparePayload(p interface{}) *bytes.Buffer {
 }
 
 func (s *UsersSuite) Test_users_HandleUserCreate() {
-	payload := struct {
-		UserName string `json:"userName"`
-		Password string `json:"password"`
+	cases := map[string]struct {
+		payload    userPayload
+		statusCode int
+		setupMock  func()
 	}{
-		UserName: "john",
-		Password: "12345678",
+		"user can be created": {
+			payload: userPayload{
+				UserName: "john",
+				Password: "12345678",
+			},
+			statusCode: http.StatusOK,
+			setupMock: func() {
+				s.usersRepo.On("GetByUserName", "john").Return(models.User{}, errors.New("user not found"))
+				s.usersRepo.On("Create", mock.AnythingOfType("User")).Return(models.User{ID: uuid.New(), UserName: "john"}, nil)
+			},
+		},
+		"user will not be created if it's exists": {
+			payload: userPayload{
+				UserName: "john",
+				Password: "12345678",
+			},
+			statusCode: http.StatusBadRequest,
+			setupMock: func() {
+				s.usersRepo.On("GetByUserName", "john").Return(models.User{}, nil)
+			},
+		},
+		"user will not be created if db return error": {
+			payload: userPayload{
+				UserName: "john",
+				Password: "12345678",
+			},
+			statusCode: http.StatusInternalServerError,
+			setupMock: func() {
+				s.usersRepo.On("GetByUserName", "john").Return(models.User{}, errors.New("user not found"))
+				s.usersRepo.On("Create", mock.AnythingOfType("User")).Return(models.User{}, errors.New("cannot create user"))
+			},
+		},
 	}
 
-	user := models.User{ID: uuid.New(), UserName: payload.UserName}
+	for name, c := range cases {
+		s.T().Run(name, func(t *testing.T) {
+			t.Parallel()
+			c.setupMock()
 
-	s.usersRepo.On("GetByUserName", payload.UserName).Return(models.User{}, errors.New("user not found"))
-	s.usersRepo.On("Create", mock.AnythingOfType("User")).Return(user, nil)
+			req := httptest.NewRequest(http.MethodPost, "/v1/user", s.preparePayload(c.payload))
+			w := httptest.NewRecorder()
 
-	req := httptest.NewRequest(http.MethodPost, "/v1/user", s.preparePayload(payload))
-	w := httptest.NewRecorder()
+			srv := server.NewServer(chi.NewRouter())
+			srv.Routes(s.users)
+			srv.ServeHTTP(w, req)
 
-	srv := server.NewServer(chi.NewRouter())
-	srv.Routes(s.users)
-	srv.ServeHTTP(w, req)
-
-	require.Equal(s.T(), http.StatusOK, w.Result().StatusCode)
-	require.Contains(s.T(), w.Body.String(), user.ID.String())
+			require.Equal(s.T(), c.statusCode, w.Result().StatusCode)
+		})
+	}
 }
 
 func (s *UsersSuite) Test_users_HandleUserCreate_InvalidJson() {
-	table := map[string]struct {
+	cases := map[string]struct {
 		payload    string
 		statusCode int
 		message    string
@@ -107,65 +150,21 @@ func (s *UsersSuite) Test_users_HandleUserCreate_InvalidJson() {
 		},
 	}
 
-	for name, tt := range table {
+	for name, c := range cases {
 		s.T().Run(name, func(t *testing.T) {
 			t.Parallel()
 
-			req := httptest.NewRequest(http.MethodPost, "/v1/user", strings.NewReader(tt.payload))
+			req := httptest.NewRequest(http.MethodPost, "/v1/user", strings.NewReader(c.payload))
 			w := httptest.NewRecorder()
 
 			srv := server.NewServer(chi.NewRouter())
 			srv.Routes(s.users)
 			srv.ServeHTTP(w, req)
 
-			require.Equal(s.T(), tt.statusCode, w.Result().StatusCode)
-			require.Equal(s.T(), tt.message, w.Body.String())
+			require.Equal(s.T(), c.statusCode, w.Result().StatusCode)
+			require.Equal(s.T(), c.message, w.Body.String())
 		})
 	}
-}
-
-func (s *UsersSuite) Test_users_HandleUserCreate_UserExist() {
-	payload := struct {
-		UserName string `json:"userName"`
-		Password string `json:"password"`
-	}{
-		UserName: "john",
-		Password: "12345678",
-	}
-
-	s.usersRepo.On("GetByUserName", payload.UserName).Return(models.User{}, nil)
-
-	req := httptest.NewRequest(http.MethodPost, "/v1/user", s.preparePayload(payload))
-	w := httptest.NewRecorder()
-
-	srv := server.NewServer(chi.NewRouter())
-	srv.Routes(s.users)
-	srv.ServeHTTP(w, req)
-
-	require.Equal(s.T(), http.StatusBadRequest, w.Result().StatusCode)
-	require.Contains(s.T(), w.Body.String(), payload.UserName)
-}
-
-func (s *UsersSuite) Test_users_HandleUserCreate_CannotCreateUser() {
-	payload := struct {
-		UserName string `json:"userName"`
-		Password string `json:"password"`
-	}{
-		UserName: "john",
-		Password: "12345678",
-	}
-
-	s.usersRepo.On("GetByUserName", payload.UserName).Return(models.User{}, errors.New("user not found"))
-	s.usersRepo.On("Create", mock.AnythingOfType("User")).Return(models.User{}, errors.New("cannot create user"))
-
-	req := httptest.NewRequest(http.MethodPost, "/v1/user", s.preparePayload(payload))
-	w := httptest.NewRecorder()
-
-	srv := server.NewServer(chi.NewRouter())
-	srv.Routes(s.users)
-	srv.ServeHTTP(w, req)
-
-	require.Equal(s.T(), http.StatusInternalServerError, w.Result().StatusCode)
 }
 
 func (s *UsersSuite) Test_users_HandleUserLogin() {
