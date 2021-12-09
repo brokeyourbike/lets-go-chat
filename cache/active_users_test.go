@@ -5,46 +5,35 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
-	"github.com/stretchr/testify/suite"
 )
 
-type ActiveUsersSuite struct {
-	suite.Suite
-	repository *ActiveUsersRepo
-}
-
-func (s *ActiveUsersSuite) SetupTest() {
-	s.repository = NewActiveUsersRepo()
-}
-
-func TestActiveUsers(t *testing.T) {
-	suite.Run(t, new(ActiveUsersSuite))
-}
-
-func (s *ActiveUsersSuite) Test_repository_Add() {
+func TestAdd(t *testing.T) {
+	repo := NewActiveUsersRepo()
 	key := uuid.New()
 
-	err := s.repository.Add(key)
-	require.NoError(s.T(), err)
+	err := repo.Add(key)
+	require.NoError(t, err)
 
-	require.Equal(s.T(), 1, s.repository.Count())
+	require.Equal(t, 1, repo.Count())
 }
 
-func (s *ActiveUsersSuite) Test_repository_Delete() {
+func TestDelete(t *testing.T) {
+	repo := NewActiveUsersRepo()
 	key := uuid.New()
 
-	require.NoError(s.T(), s.repository.Add(key))
-	require.Equal(s.T(), 1, s.repository.Count())
+	require.NoError(t, repo.Add(key))
+	require.Equal(t, 1, repo.Count())
 
-	s.repository.Delete(key)
-	require.Equal(s.T(), 0, s.repository.Count())
+	repo.Delete(key)
+	require.Equal(t, 0, repo.Count())
 }
 
-func (s *ActiveUsersSuite) Test_repository_Count() {
+func TestCount(t *testing.T) {
+	repo := NewActiveUsersRepo()
 	key := uuid.New()
 
-	require.NoError(s.T(), s.repository.Add(key))
-	require.NoError(s.T(), s.repository.Add(key))
+	require.NoError(t, repo.Add(key))
+	require.NoError(t, repo.Add(key))
 
-	require.Equal(s.T(), 1, s.repository.Count())
+	require.Equal(t, 1, repo.Count())
 }
