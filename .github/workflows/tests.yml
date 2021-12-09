@@ -20,6 +20,11 @@ jobs:
       with:
         go-version: 1.17
 
+    - name: Setup mockery
+      run: |
+        /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+        brew install mockery
+
     - name: Build
       run: go build -v ./...
 
