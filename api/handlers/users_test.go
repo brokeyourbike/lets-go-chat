@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
-	"strings"
 	"testing"
 	"time"
 
@@ -159,82 +158,67 @@ func (s *UsersSuite) Test_users_HandleUserCreate() {
 }
 
 func (s *UsersSuite) Test_users_HandleUserLogin() {
-	payload := struct {
-		UserName string `json:"userName"`
-		Password string `json:"password"`
+	cases := map[string]struct {
+		payload    userPayload
+		statusCode int
+		message    string
+		setupMock  func()
 	}{
-		UserName: "john",
-		Password: "12345678",
+		"user can't login if it's not exists": {
+			payload: userPayload{
+				UserName: "john",
+				Password: "12345678",
+			},
+			statusCode: http.StatusBadRequest,
+			message:    "User with userName john not found\n",
+			setupMock: func() {
+				s.usersRepo.On("GetByUserName", "john").Return(models.User{}, db.ErrUserNotFound)
+			},
+		},
+		"user can't login if db cannot perform query": {
+			payload: userPayload{
+				UserName: "john",
+				Password: "12345678",
+			},
+			statusCode: http.StatusBadRequest,
+			message:    "User with userName john not found\n",
+			setupMock: func() {
+				s.usersRepo.On("GetByUserName", "john").Return(models.User{}, errors.New("cannot query user"))
+			},
+		},
+		"user can login": {
+			payload: userPayload{
+				UserName: "john",
+				Password: "12345678",
+			},
+			statusCode: http.StatusOK,
+			message:    "{\"url\":\"ws://example.com/v1/chat/ws.rtm.start?token=d0b61534-256c-4ef1-b98e-53c5424ce7cd\"}\n",
+			setupMock: func() {
+				u := models.User{ID: uuid.New(), UserName: "john", PasswordHash: "$2a$04$hOGVri5G8ZLnrXtO/EP6keZkdzveoVGfh9krMXxeI/OP2QcSDJWOW"}
+				t := models.Token{ID: uuid.MustParse("d0b61534-256c-4ef1-b98e-53c5424ce7cd"), UserID: u.ID, ExpiresAt: time.Now().Add(time.Minute)}
+
+				s.usersRepo.On("GetByUserName", "john").Return(u, nil)
+				s.tokensRepo.On("Create", mock.AnythingOfType("Token")).Return(t, nil)
+			},
+		},
 	}
 
-	user := models.User{ID: uuid.New(), UserName: "john", PasswordHash: "$2a$04$hOGVri5G8ZLnrXtO/EP6keZkdzveoVGfh9krMXxeI/OP2QcSDJWOW"}
-	token := models.Token{ID: uuid.New(), UserID: user.ID, ExpiresAt: time.Now().Add(time.Minute)}
+	for name, c := range cases {
+		s.T().Run(name, func(t *testing.T) {
+			t.Parallel()
+			c.setupMock()
 
-	s.usersRepo.On("GetByUserName", payload.UserName).Return(user, nil)
-	s.tokensRepo.On("Create", mock.AnythingOfType("Token")).Return(token, nil)
+			req := httptest.NewRequest(http.MethodPost, "/v1/user/login", s.preparePayload(c.payload))
+			w := httptest.NewRecorder()
 
-	req := httptest.NewRequest(http.MethodPost, "/v1/user/login", s.preparePayload(payload))
-	w := httptest.NewRecorder()
+			srv := server.NewServer(chi.NewRouter())
+			srv.Routes(s.users)
+			srv.ServeHTTP(w, req)
 
-	srv := server.NewServer(chi.NewRouter())
-	srv.Routes(s.users)
-	srv.ServeHTTP(w, req)
-
-	require.Equal(s.T(), http.StatusOK, w.Result().StatusCode)
-	require.Equal(s.T(), token.ExpiresAt.UTC().String(), w.Result().Header.Get("X-Expires-After"))
-}
-
-func (s *UsersSuite) Test_users_HandleUserLogin_InvalidJson() {
-	req := httptest.NewRequest(http.MethodPost, "/v1/user/login", strings.NewReader("{not a valid json}"))
-	w := httptest.NewRecorder()
-
-	srv := server.NewServer(chi.NewRouter())
-	srv.Routes(s.users)
-	srv.ServeHTTP(w, req)
-
-	require.Equal(s.T(), http.StatusBadRequest, w.Result().StatusCode)
-}
-
-func (s *UsersSuite) Test_users_HandleUserLogin_UserNotFound() {
-	payload := struct {
-		UserName string `json:"userName"`
-		Password string `json:"password"`
-	}{
-		UserName: "john",
-		Password: "12345678",
+			require.Equal(s.T(), c.statusCode, w.Result().StatusCode)
+			require.Equal(s.T(), c.message, w.Body.String())
+		})
 	}
-
-	s.usersRepo.On("GetByUserName", payload.UserName).Return(models.User{}, db.ErrUserNotFound)
-
-	req := httptest.NewRequest(http.MethodPost, "/v1/user/login", s.preparePayload(payload))
-	w := httptest.NewRecorder()
-
-	srv := server.NewServer(chi.NewRouter())
-	srv.Routes(s.users)
-	srv.ServeHTTP(w, req)
-
-	require.Equal(s.T(), http.StatusBadRequest, w.Result().StatusCode)
-}
-
-func (s *UsersSuite) Test_users_HandleUserLogin_CannotQueryUser() {
-	payload := struct {
-		UserName string `json:"userName"`
-		Password string `json:"password"`
-	}{
-		UserName: "john",
-		Password: "12345678",
-	}
-
-	s.usersRepo.On("GetByUserName", payload.UserName).Return(models.User{}, errors.New("cannot query user"))
-
-	req := httptest.NewRequest(http.MethodPost, "/v1/user/login", s.preparePayload(payload))
-	w := httptest.NewRecorder()
-
-	srv := server.NewServer(chi.NewRouter())
-	srv.Routes(s.users)
-	srv.ServeHTTP(w, req)
-
-	require.Equal(s.T(), http.StatusInternalServerError, w.Result().StatusCode)
 }
 
 func (s *UsersSuite) Test_users_HandleUserActive() {
