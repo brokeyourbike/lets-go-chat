@@ -171,6 +171,7 @@ func (u *Users) HandleChat() http.HandlerFunc {
 
 		u.tokensRepo.InvalidateByUserId(token.UserID)
 		u.activeUsersRepo.Add(token.UserID)
+		defer u.activeUsersRepo.Delete(token.UserID)
 
 		conn, err := upgrader.Upgrade(w, r, nil)
 		if err != nil {
@@ -178,7 +179,6 @@ func (u *Users) HandleChat() http.HandlerFunc {
 			return
 		}
 		defer conn.Close()
-		defer u.activeUsersRepo.Delete(token.UserID)
 
 		for {
 			mt, message, err := conn.ReadMessage()
