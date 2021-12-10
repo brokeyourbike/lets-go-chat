@@ -8,7 +8,7 @@ import (
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/brokeyourbike/lets-go-chat/models"
 	"github.com/google/uuid"
-	"github.com/stretchr/testify/require"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 	"gorm.io/gorm"
 )
@@ -38,8 +38,8 @@ func (s *TokensSuite) Test_repository_Create_ItCanCreateToken() {
 	s.mock.ExpectCommit()
 
 	t, err := s.repository.Create(token)
-	require.NoError(s.T(), err)
-	require.Equal(s.T(), token, t)
+	assert.NoError(s.T(), err)
+	assert.Equal(s.T(), token, t)
 }
 
 func (s *TokensSuite) Test_repository_Get_ItCanReturnTokenById() {
@@ -52,8 +52,8 @@ func (s *TokensSuite) Test_repository_Get_ItCanReturnTokenById() {
 			AddRow(token.ID, token.UserID, token.ExpiresAt))
 
 	res, err := s.repository.Get(token.ID)
-	require.NoError(s.T(), err)
-	require.Equal(s.T(), token, res)
+	assert.NoError(s.T(), err)
+	assert.Equal(s.T(), token, res)
 }
 
 func (s *TokensSuite) Test_repository_Get_ItCanReturnErrTokenNotFound() {
@@ -65,8 +65,8 @@ func (s *TokensSuite) Test_repository_Get_ItCanReturnErrTokenNotFound() {
 		WillReturnError(gorm.ErrRecordNotFound)
 
 	res, err := s.repository.Get(tokenID)
-	require.ErrorIs(s.T(), err, ErrTokenNotFound)
-	require.Equal(s.T(), models.Token{}, res)
+	assert.ErrorIs(s.T(), err, ErrTokenNotFound)
+	assert.Equal(s.T(), models.Token{}, res)
 }
 
 func (s *TokensSuite) Test_repository_Get_ItCanReturnGeneralError() {
@@ -78,8 +78,8 @@ func (s *TokensSuite) Test_repository_Get_ItCanReturnGeneralError() {
 		WillReturnError(gorm.ErrInvalidField)
 
 	res, err := s.repository.Get(tokenID)
-	require.ErrorIs(s.T(), err, gorm.ErrInvalidField)
-	require.Equal(s.T(), models.Token{}, res)
+	assert.ErrorIs(s.T(), err, gorm.ErrInvalidField)
+	assert.Equal(s.T(), models.Token{}, res)
 }
 
 func (s *TokensSuite) Test_repository_InvalidateByUserId() {
@@ -93,5 +93,5 @@ func (s *TokensSuite) Test_repository_InvalidateByUserId() {
 	s.mock.ExpectCommit()
 
 	err := s.repository.InvalidateByUserId(userID)
-	require.NoError(s.T(), err)
+	assert.NoError(s.T(), err)
 }

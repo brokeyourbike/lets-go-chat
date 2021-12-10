@@ -7,7 +7,6 @@ import (
 
 	"github.com/sirupsen/logrus/hooks/test"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 func TestErrorLogger(t *testing.T) {
@@ -21,7 +20,7 @@ func TestErrorLogger(t *testing.T) {
 	w := httptest.NewRecorder()
 	mw.ServeHTTP(w, req)
 
-	require.Equal(t, http.StatusInternalServerError, w.Result().StatusCode)
+	assert.Equal(t, http.StatusInternalServerError, w.Result().StatusCode)
 	assert.Equal(t, 1, len(hook.Entries))
 	assert.Equal(t, "Foo error\n", hook.LastEntry().Message)
 }

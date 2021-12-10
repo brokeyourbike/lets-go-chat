@@ -7,7 +7,7 @@ import (
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/brokeyourbike/lets-go-chat/models"
 	"github.com/google/uuid"
-	"github.com/stretchr/testify/require"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 	"gorm.io/gorm"
 )
@@ -37,8 +37,8 @@ func (s *UsersSuite) Test_repository_Create_ItCanCreateUser() {
 	s.mock.ExpectCommit()
 
 	u, err := s.repository.Create(user)
-	require.NoError(s.T(), err)
-	require.Equal(s.T(), user, u)
+	assert.NoError(s.T(), err)
+	assert.Equal(s.T(), user, u)
 }
 
 func (s *UsersSuite) Test_repository_GetByUserName_ItCanReturnUserByUserName() {
@@ -51,8 +51,8 @@ func (s *UsersSuite) Test_repository_GetByUserName_ItCanReturnUserByUserName() {
 			AddRow(user.ID, user.UserName, user.PasswordHash))
 
 	res, err := s.repository.GetByUserName(user.UserName)
-	require.NoError(s.T(), err)
-	require.Equal(s.T(), user, res)
+	assert.NoError(s.T(), err)
+	assert.Equal(s.T(), user, res)
 }
 
 func (s *UsersSuite) Test_repository_GetByUserName_ItCanReturnErrUserNotFound() {
@@ -62,8 +62,8 @@ func (s *UsersSuite) Test_repository_GetByUserName_ItCanReturnErrUserNotFound() 
 		WillReturnError(gorm.ErrRecordNotFound)
 
 	res, err := s.repository.GetByUserName("johndoe")
-	require.ErrorIs(s.T(), err, ErrUserNotFound)
-	require.Equal(s.T(), models.User{}, res)
+	assert.ErrorIs(s.T(), err, ErrUserNotFound)
+	assert.Equal(s.T(), models.User{}, res)
 }
 
 func (s *UsersSuite) Test_repository_GetByUserName_ItCanReturnGeneralError() {
@@ -73,6 +73,6 @@ func (s *UsersSuite) Test_repository_GetByUserName_ItCanReturnGeneralError() {
 		WillReturnError(gorm.ErrInvalidField)
 
 	res, err := s.repository.GetByUserName("johndoe")
-	require.ErrorIs(s.T(), err, gorm.ErrInvalidField)
-	require.Equal(s.T(), models.User{}, res)
+	assert.ErrorIs(s.T(), err, gorm.ErrInvalidField)
+	assert.Equal(s.T(), models.User{}, res)
 }

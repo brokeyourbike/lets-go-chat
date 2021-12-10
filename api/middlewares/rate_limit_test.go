@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -24,7 +25,7 @@ func TestRateLimit(t *testing.T) {
 	res := w.Result()
 
 	require.Equal(t, http.StatusOK, res.StatusCode)
-	require.Equal(t, "100", res.Header.Get("X-RateLimit-Limit"))
-	require.Equal(t, "99", res.Header.Get("X-RateLimit-Remaining"))
-	require.Equal(t, strconv.FormatInt(time.Now().Add(time.Hour).Unix(), 10), res.Header.Get("X-RateLimit-Reset"))
+	assert.Equal(t, "100", res.Header.Get("X-RateLimit-Limit"))
+	assert.Equal(t, "99", res.Header.Get("X-RateLimit-Remaining"))
+	assert.Equal(t, strconv.FormatInt(time.Now().Add(time.Hour).Unix(), 10), res.Header.Get("X-RateLimit-Reset"))
 }

@@ -8,7 +8,6 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/sirupsen/logrus/hooks/test"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 func TestRecoverer(t *testing.T) {
@@ -22,7 +21,7 @@ func TestRecoverer(t *testing.T) {
 	w := httptest.NewRecorder()
 	mw.ServeHTTP(w, req)
 
-	require.Equal(t, http.StatusInternalServerError, w.Result().StatusCode)
+	assert.Equal(t, http.StatusInternalServerError, w.Result().StatusCode)
 
 	assert.Equal(t, 1, len(hook.Entries))
 	assert.Equal(t, logrus.ErrorLevel, hook.LastEntry().Level)

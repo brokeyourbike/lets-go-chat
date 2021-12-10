@@ -16,6 +16,7 @@ import (
 	"github.com/brokeyourbike/lets-go-chat/models"
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 )
@@ -127,8 +128,8 @@ func Test_users_HandleUserCreate(t *testing.T) {
 			srv.Routes(users)
 			srv.ServeHTTP(w, req)
 
-			require.Equal(t, c.statusCode, w.Result().StatusCode)
-			require.Equal(t, c.message, w.Body.String())
+			assert.Equal(t, c.statusCode, w.Result().StatusCode)
+			assert.Equal(t, c.message, w.Body.String())
 
 			usersRepo.AssertExpectations(t)
 		})
@@ -176,7 +177,7 @@ func Test_users_HandleUserLogin(t *testing.T) {
 				usersRepo.On("GetByUserName", "john").Return(u, nil)
 			},
 		},
-		"user can't login is token was not created": {
+		"user can't login if token was not created": {
 			payload: userPayload{
 				UserName: "john",
 				Password: "12345678",
@@ -223,8 +224,8 @@ func Test_users_HandleUserLogin(t *testing.T) {
 			srv.Routes(users)
 			srv.ServeHTTP(w, req)
 
-			require.Equal(t, c.statusCode, w.Result().StatusCode)
-			require.Equal(t, c.message, w.Body.String())
+			assert.Equal(t, c.statusCode, w.Result().StatusCode)
+			assert.Equal(t, c.message, w.Body.String())
 
 			usersRepo.AssertExpectations(t)
 			tokensRepo.AssertExpectations(t)
@@ -245,8 +246,8 @@ func Test_users_HandleUserActive(t *testing.T) {
 	srv.Routes(users)
 	srv.ServeHTTP(w, req)
 
-	require.Equal(t, http.StatusOK, w.Result().StatusCode)
-	require.Equal(t, "{\"count\":10}\n", w.Body.String())
+	assert.Equal(t, http.StatusOK, w.Result().StatusCode)
+	assert.Equal(t, "{\"count\":10}\n", w.Body.String())
 
 	activeUsersRepo.AssertExpectations(t)
 }
@@ -336,8 +337,8 @@ func Test_users_HandleChat(t *testing.T) {
 			srv.Routes(users)
 			srv.ServeHTTP(w, req)
 
-			require.Equal(t, c.statusCode, w.Result().StatusCode)
-			require.Equal(t, c.message, w.Body.String())
+			assert.Equal(t, c.statusCode, w.Result().StatusCode)
+			assert.Equal(t, c.message, w.Body.String())
 
 			activeUsersRepo.AssertExpectations(t)
 			tokensRepo.AssertExpectations(t)
