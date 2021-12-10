@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestAdd(t *testing.T) {
+func TestAddAndCount(t *testing.T) {
 	cases := map[string]struct {
 		setup     func(t *testing.T, repo *ActiveUsersRepo)
 		wantCount int
@@ -52,7 +52,7 @@ func TestAdd(t *testing.T) {
 	}
 }
 
-func TestDelete(t *testing.T) {
+func TestDeleteAndCount(t *testing.T) {
 	cases := map[string]struct {
 		setup     func(t *testing.T, repo *ActiveUsersRepo)
 		wantCount int
