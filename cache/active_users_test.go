@@ -92,25 +92,7 @@ func TestDeleteAndCount(t *testing.T) {
 	}
 }
 
-func TestCount(t *testing.T) {
-	cases := map[string]struct {
-		setup     func(t *testing.T, repo *ActiveUsersRepo)
-		wantCount int
-	}{
-		"Count without items": {
-			setup:     func(t *testing.T, repo *ActiveUsersRepo) {},
-			wantCount: 0,
-		},
-	}
-
-	for name, c := range cases {
-		t.Run(name, func(t *testing.T) {
-			t.Parallel()
-
-			repo := NewActiveUsersRepo()
-			c.setup(t, repo)
-
-			assert.Equal(t, c.wantCount, repo.Count())
-		})
-	}
+func TestCountWithoutItems(t *testing.T) {
+	repo := NewActiveUsersRepo()
+	assert.Equal(t, 0, repo.Count())
 }
