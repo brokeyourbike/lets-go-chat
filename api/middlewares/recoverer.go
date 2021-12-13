@@ -15,7 +15,7 @@ func Recoverer(next http.Handler) http.Handler {
 			if rvr := recover(); rvr != nil && rvr != http.ErrAbortHandler {
 				log.WithFields(log.Fields{
 					"stacktrace": string(debug.Stack()),
-				}).Fatalf("%+v", rvr)
+				}).Errorf("%+v", rvr)
 
 				w.WriteHeader(http.StatusInternalServerError)
 			}

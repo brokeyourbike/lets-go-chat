@@ -18,7 +18,7 @@ import (
 var upgrader = websocket.Upgrader{}
 
 type UsersRepo interface {
-	Create(user models.User) error
+	Create(user models.User) (models.User, error)
 	GetByUserName(userName string) (models.User, error)
 }
 
@@ -29,7 +29,7 @@ type ActiveUsersRepo interface {
 }
 
 type TokensRepo interface {
-	Create(token models.Token) error
+	Create(token models.Token) (models.Token, error)
 	Get(id uuid.UUID) (models.Token, error)
 	InvalidateByUserId(userId uuid.UUID) error
 }
@@ -74,12 +74,13 @@ func (u *Users) HandleUserCreate() http.HandlerFunc {
 		hashedPassword, err := hasher.HashPassword(data.Password)
 		if err != nil {
 			http.Error(w, "Password cannot be hashed", http.StatusInternalServerError)
+			return
 		}
 
-		user := models.User{ID: uuid.New(), UserName: data.UserName, PasswordHash: hashedPassword}
-
-		if u.usersRepo.Create(user) != nil {
+		user, err := u.usersRepo.Create(models.User{ID: uuid.New(), UserName: data.UserName, PasswordHash: hashedPassword})
+		if err != nil {
 			http.Error(w, "User cannot be created", http.StatusInternalServerError)
+			return
 		}
 
 		w.Header().Set("Content-Type", "application/json")
@@ -120,9 +121,8 @@ func (u *Users) HandleUserLogin() http.HandlerFunc {
 			return
 		}
 
-		token := models.Token{ID: uuid.New(), UserID: user.ID, ExpiresAt: time.Now().Add(time.Minute)}
-
-		if u.tokensRepo.Create(token) != nil {
+		token, err := u.tokensRepo.Create(models.Token{ID: uuid.New(), UserID: user.ID, ExpiresAt: time.Now().Add(time.Minute)})
+		if err != nil {
 			http.Error(w, "Cannot create token for user", http.StatusInternalServerError)
 			return
 		}
@@ -171,6 +171,7 @@ func (u *Users) HandleChat() http.HandlerFunc {
 
 		u.tokensRepo.InvalidateByUserId(token.UserID)
 		u.activeUsersRepo.Add(token.UserID)
+		defer u.activeUsersRepo.Delete(token.UserID)
 
 		conn, err := upgrader.Upgrade(w, r, nil)
 		if err != nil {
@@ -178,7 +179,6 @@ func (u *Users) HandleChat() http.HandlerFunc {
 			return
 		}
 		defer conn.Close()
-		defer u.activeUsersRepo.Delete(token.UserID)
 
 		for {
 			mt, message, err := conn.ReadMessage()

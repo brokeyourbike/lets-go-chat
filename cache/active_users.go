@@ -7,33 +7,30 @@ import (
 )
 
 type ActiveUsersRepo struct {
-	users map[uuid.UUID]bool
-	mu    *sync.RWMutex
+	users sync.Map
 }
 
 func NewActiveUsersRepo() *ActiveUsersRepo {
 	return &ActiveUsersRepo{
-		users: make(map[uuid.UUID]bool),
-		mu:    &sync.RWMutex{},
+		users: sync.Map{},
 	}
 }
 
 func (r *ActiveUsersRepo) Add(userId uuid.UUID) error {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-	r.users[userId] = true
+	r.users.Store(userId, true)
 	return nil
 }
 
 func (r *ActiveUsersRepo) Delete(userId uuid.UUID) error {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-	delete(r.users, userId)
+	r.users.Delete(userId)
 	return nil
 }
 
 func (r *ActiveUsersRepo) Count() int {
-	r.mu.RLock()
-	defer r.mu.RUnlock()
-	return len(r.users)
+	count := 0
+	r.users.Range(func(key, value interface{}) bool {
+		count++
+		return true
+	})
+	return count
 }
