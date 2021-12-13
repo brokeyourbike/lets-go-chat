@@ -1,5 +1,17 @@
 # Changelog
 
+### [0.3.1](https://www.github.com/brokeyourbike/lets-go-chat/compare/v0.3.0...v0.3.1) (2021-12-13)
+
+
+### Bug Fixes
+
+* decouple users handle ([8d866bc](https://www.github.com/brokeyourbike/lets-go-chat/commit/8d866bc8165ffda269a452d15500368791f61c88))
+* remove mocks from source ([f949b0f](https://www.github.com/brokeyourbike/lets-go-chat/commit/f949b0fa1ccd721a680e115747b218b8d4367ed6))
+* remove user from active list if request was not upgraded ([d21eba7](https://www.github.com/brokeyourbike/lets-go-chat/commit/d21eba7083a15b17140e316657033318c88c3636))
+* return after error ([f5e4be9](https://www.github.com/brokeyourbike/lets-go-chat/commit/f5e4be90bf88d9ab501590a0e8f01b14e7a00ed5))
+* return model after creation ([163e2a9](https://www.github.com/brokeyourbike/lets-go-chat/commit/163e2a9361e02af943832a2c20989d925560a102))
+* use table tests for `HandleUserCreate` ([749bebf](https://www.github.com/brokeyourbike/lets-go-chat/commit/749bebfaa8b4b551a10c876027e6de86645aa3d2))
+
 ## [0.3.0](https://www.github.com/brokeyourbike/lets-go-chat/compare/v0.2.0...v0.3.0) (2021-11-26)
 
 
