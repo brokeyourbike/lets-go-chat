@@ -118,7 +118,7 @@ func Test_users_HandleUserCreate(t *testing.T) {
 			t.Parallel()
 
 			usersRepo := new(mocks.UsersRepo)
-			users := NewUsers(usersRepo, nil, nil)
+			users := NewUsers(usersRepo, nil, nil, nil)
 			c.setupMock(usersRepo)
 
 			req := httptest.NewRequest(http.MethodPost, "/v1/user", preparePayload(t, c.payload))
@@ -214,7 +214,7 @@ func Test_users_HandleUserLogin(t *testing.T) {
 
 			usersRepo := new(mocks.UsersRepo)
 			tokensRepo := new(mocks.TokensRepo)
-			users := NewUsers(usersRepo, nil, tokensRepo)
+			users := NewUsers(usersRepo, nil, tokensRepo, nil)
 			c.setupMock(usersRepo, tokensRepo)
 
 			req := httptest.NewRequest(http.MethodPost, "/v1/user/login", preparePayload(t, c.payload))
@@ -235,7 +235,7 @@ func Test_users_HandleUserLogin(t *testing.T) {
 
 func Test_users_HandleUserActive(t *testing.T) {
 	activeUsersRepo := new(mocks.ActiveUsersRepo)
-	users := NewUsers(nil, activeUsersRepo, nil)
+	users := NewUsers(nil, activeUsersRepo, nil, nil)
 
 	activeUsersRepo.On("Count").Return(10)
 
@@ -326,7 +326,7 @@ func Test_users_HandleChat(t *testing.T) {
 
 			activeUsersRepo := new(mocks.ActiveUsersRepo)
 			tokensRepo := new(mocks.TokensRepo)
-			users := NewUsers(nil, activeUsersRepo, tokensRepo)
+			users := NewUsers(nil, activeUsersRepo, tokensRepo, nil)
 
 			c.setupMock(activeUsersRepo, tokensRepo)
 

@@ -34,14 +34,19 @@ type TokensRepo interface {
 	InvalidateByUserId(userId uuid.UUID) error
 }
 
+type MessagesRepo interface {
+	Create(msg models.Message) (models.Message, error)
+}
+
 type Users struct {
 	usersRepo       UsersRepo
 	activeUsersRepo ActiveUsersRepo
 	tokensRepo      TokensRepo
+	messagesRepo    MessagesRepo
 }
 
-func NewUsers(u UsersRepo, a ActiveUsersRepo, t TokensRepo) *Users {
-	return &Users{usersRepo: u, activeUsersRepo: a, tokensRepo: t}
+func NewUsers(u UsersRepo, a ActiveUsersRepo, t TokensRepo, m MessagesRepo) *Users {
+	return &Users{usersRepo: u, activeUsersRepo: a, tokensRepo: t, messagesRepo: m}
 }
 
 func (u *Users) HandleUserCreate() http.HandlerFunc {
@@ -186,6 +191,9 @@ func (u *Users) HandleChat() http.HandlerFunc {
 				http.Error(w, "Cannot read message", http.StatusInternalServerError)
 				break
 			}
+
+			u.messagesRepo.Create(models.Message{ID: uuid.New(), UserID: token.UserID, Text: string(message), CreatedAt: time.Now()})
+
 			err = conn.WriteMessage(mt, message)
 			if err != nil {
 				http.Error(w, "Cannot write message", http.StatusInternalServerError)

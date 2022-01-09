@@ -39,8 +39,9 @@ func run() error {
 
 	orm.AutoMigrate(&models.User{})
 	orm.AutoMigrate(&models.Token{})
+	orm.AutoMigrate(&models.Message{})
 
-	users := handlers.NewUsers(db.NewUsersRepo(orm), cache.NewActiveUsersRepo(), db.NewTokensRepo(orm))
+	users := handlers.NewUsers(db.NewUsersRepo(orm), cache.NewActiveUsersRepo(), db.NewTokensRepo(orm), db.NewMessagesRepo(orm))
 
 	srv := server.NewServer(chi.NewRouter())
 	srv.Routes(users)
