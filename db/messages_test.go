@@ -27,12 +27,12 @@ func TestMessages(t *testing.T) {
 }
 
 func (s *MessagesSuite) Test_repository_Create_ItCanCreateMessage() {
-	token := models.Message{ID: uuid.New(), UserID: uuid.New(), CreatedAt: time.Now()}
+	token := models.Message{ID: uuid.New(), UserID: uuid.New(), Text: "", CreatedAt: time.Now()}
 
 	s.mock.ExpectBegin()
 	s.mock.ExpectExec(regexp.QuoteMeta(
-		`INSERT INTO "messages" ("id","user_id","created_at") VALUES ($1,$2,$3)`)).
-		WithArgs(token.ID, token.UserID, token.CreatedAt).
+		`INSERT INTO "messages" ("id","user_id","text","created_at") VALUES ($1,$2,$3,$4)`)).
+		WithArgs(token.ID, token.UserID, token.Text, token.CreatedAt).
 		WillReturnResult(sqlmock.NewResult(1, 1))
 	s.mock.ExpectCommit()
 

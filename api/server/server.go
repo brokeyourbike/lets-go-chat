@@ -14,6 +14,9 @@ type UsersHandler interface {
 	HandleUserCreate() http.HandlerFunc
 	HandleUserLogin() http.HandlerFunc
 	HandleUserActive() http.HandlerFunc
+}
+
+type ChatHandler interface {
 	HandleChat() http.HandlerFunc
 }
 
@@ -34,7 +37,7 @@ func (s *server) Handle(config *configurations.Config) {
 	log.Fatal(http.ListenAndServe(config.Host+":"+config.Port, s.router))
 }
 
-func (s *server) Routes(u UsersHandler) {
+func (s *server) Routes(u UsersHandler, c ChatHandler) {
 	rl := middlewares.NewRateLimit(middlewares.RateLimitOpts{Limit: 10, Period: time.Hour})
 
 	s.router.Use(middlewares.Logger)
@@ -44,5 +47,5 @@ func (s *server) Routes(u UsersHandler) {
 	s.router.Post("/v1/user", u.HandleUserCreate())
 	s.router.Post("/v1/user/login", rl.Handle(u.HandleUserLogin()))
 	s.router.Get("/v1/user/active", u.HandleUserActive())
-	s.router.Get("/v1/chat/ws.rtm.start", u.HandleChat())
+	s.router.Get("/v1/chat/ws.rtm.start", c.HandleChat())
 }
