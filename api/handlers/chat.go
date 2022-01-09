@@ -75,7 +75,7 @@ func (c *Chat) HandleChat() http.HandlerFunc {
 			return
 		}
 
-		client := &Client{hub: c.chatHub, conn: conn, send: make(chan []byte, 256)}
+		client := &Client{hub: c.chatHub, conn: conn, send: make(chan []byte, 256), userID: token.UserID}
 		client.hub.register <- client
 
 		messages, err := c.messagesRepo.GetAfterDateExcludingUserId(time.Now(), token.UserID)
