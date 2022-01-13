@@ -102,7 +102,6 @@ func (u *Users) HandleUserLogin() http.HandlerFunc {
 		}
 
 		user, err := u.usersRepo.GetByUserName(data.UserName)
-
 		if errors.Is(err, db.ErrUserNotFound) {
 			http.Error(w, fmt.Sprintf("User with userName %s not found", data.UserName), http.StatusBadRequest)
 			return
