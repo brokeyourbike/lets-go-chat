@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"errors"
-	"log"
 	"net/http"
 	"time"
 
@@ -10,11 +9,15 @@ import (
 	"github.com/brokeyourbike/lets-go-chat/models"
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
+	log "github.com/sirupsen/logrus"
 )
 
 const (
 	// Time allowed to write a message to the peer.
 	writeWait = 10 * time.Second
+
+	// Time allowed to read the next message from the peer.
+	readWait = 60 * time.Second
 
 	// Maximum message size allowed from peer.
 	maxMessageSize = 512
@@ -65,9 +68,30 @@ func (c *Chat) HandleChat() http.HandlerFunc {
 			return
 		}
 
-		c.tokensRepo.InvalidateByUserId(token.UserID)
-		c.activeUsersRepo.Add(token.UserID)
-		defer c.activeUsersRepo.Delete(token.UserID)
+		if err = c.tokensRepo.InvalidateByUserId(token.UserID); err != nil {
+			http.Error(w, "Token cannot be invalidated", http.StatusInternalServerError)
+			return
+		}
+
+		if err = c.activeUsersRepo.Add(token.UserID); err != nil {
+			log.WithFields(log.Fields{
+				"UserId": token.UserID,
+			}).Log(log.WarnLevel, "Cannot add user to the list of active users")
+		}
+
+		defer func() {
+			if err = c.activeUsersRepo.Delete(token.UserID); err != nil {
+				log.WithFields(log.Fields{
+					"UserId": token.UserID,
+				}).Log(log.WarnLevel, "Cannot remove user from the list of active users")
+			}
+		}()
+
+		messages, err := c.messagesRepo.GetAfterDateExcludingUserId(time.Now(), token.UserID)
+		if err != nil {
+			http.Error(w, "Cannot fetch previous messages", http.StatusInternalServerError)
+			return
+		}
 
 		conn, err := upgrader.Upgrade(w, r, nil)
 		if err != nil {
@@ -78,18 +102,12 @@ func (c *Chat) HandleChat() http.HandlerFunc {
 		client := &Client{hub: c.chatHub, conn: conn, send: make(chan []byte, 256), userID: token.UserID}
 		client.hub.register <- client
 
-		messages, err := c.messagesRepo.GetAfterDateExcludingUserId(time.Now(), token.UserID)
-		if err != nil {
-			http.Error(w, "Cannot fetch previous messages", http.StatusInternalServerError)
-			return
-		}
+		go client.write()
+		go client.read(c.messagesRepo)
 
 		for _, msg := range messages {
 			client.send <- []byte(msg.Text)
 		}
-
-		go client.write()
-		go client.read(c.messagesRepo)
 	}
 }
 
@@ -137,12 +155,7 @@ func (h *Hub) Run() {
 				if client == message.client {
 					continue
 				}
-				select {
-				case client.send <- message.content:
-				default:
-					close(client.send)
-					delete(h.clients, client)
-				}
+				client.send <- message.content
 			}
 		}
 	}
@@ -167,12 +180,10 @@ func (c *Client) read(messagesRepo MessagesRepo) {
 		c.conn.Close()
 	}()
 	c.conn.SetReadLimit(maxMessageSize)
+	c.conn.SetReadDeadline(time.Now().Add(readWait))
 	for {
 		_, message, err := c.conn.ReadMessage()
 		if err != nil {
-			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
-				log.Printf("error: %v", err)
-			}
 			break
 		}
 		messagesRepo.Create(models.Message{ID: uuid.New(), UserID: c.userID, Text: string(message), CreatedAt: time.Now()})
