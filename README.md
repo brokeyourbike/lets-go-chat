@@ -17,7 +17,7 @@ HOST=127.0.0.1 PORT=8080 go run main.go
 or with `reflex`
 
 ```bash
-HOST=127.0.0.1 PORT=8080 reflex -r '\.go' -s -- sh -c "go run main.go"
+HOST=127.0.0.1 PORT=8080 reflex -r '\.go' -s -- sh -c "MallocNanoZone=0 go run -race main.go"
 ```
 
 ## DB
@@ -29,7 +29,13 @@ docker run -it --rm --name go-postgres -p 5432:5432 -e POSTGRES_USER=postgres -e
 ## How to test
 
 ```bash
-mockery --all && go test -race -shuffle=on ./...
+mockery --all && MallocNanoZone=0 go test -race -shuffle=on ./...
+```
+
+## How to run loadtest
+
+```bash
+artillery run ./loadtest.yml --output result.json  
 ```
 
 ## License

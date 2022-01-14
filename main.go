@@ -39,11 +39,19 @@ func run() error {
 
 	orm.AutoMigrate(&models.User{})
 	orm.AutoMigrate(&models.Token{})
+	orm.AutoMigrate(&models.Message{})
 
-	users := handlers.NewUsers(db.NewUsersRepo(orm), cache.NewActiveUsersRepo(), db.NewTokensRepo(orm))
+	activeUsersRepo := cache.NewActiveUsersRepo()
+	tokensRepo := db.NewTokensRepo(orm)
+
+	hub := handlers.NewHub()
+	go hub.Run()
+
+	users := handlers.NewUsers(db.NewUsersRepo(orm), activeUsersRepo, tokensRepo)
+	chat := handlers.NewChat(hub, activeUsersRepo, tokensRepo, db.NewMessagesRepo(orm))
 
 	srv := server.NewServer(chi.NewRouter())
-	srv.Routes(users)
+	srv.Routes(users, chat)
 	srv.Handle(&cfg)
 
 	return nil

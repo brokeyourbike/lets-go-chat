@@ -12,10 +12,7 @@ import (
 	"github.com/brokeyourbike/lets-go-chat/pkg/hasher"
 	"github.com/go-playground/validator/v10"
 	"github.com/google/uuid"
-	"github.com/gorilla/websocket"
 )
-
-var upgrader = websocket.Upgrader{}
 
 type UsersRepo interface {
 	Create(user models.User) (models.User, error)
@@ -105,7 +102,6 @@ func (u *Users) HandleUserLogin() http.HandlerFunc {
 		}
 
 		user, err := u.usersRepo.GetByUserName(data.UserName)
-
 		if errors.Is(err, db.ErrUserNotFound) {
 			http.Error(w, fmt.Sprintf("User with userName %s not found", data.UserName), http.StatusBadRequest)
 			return
@@ -121,7 +117,7 @@ func (u *Users) HandleUserLogin() http.HandlerFunc {
 			return
 		}
 
-		token, err := u.tokensRepo.Create(models.Token{ID: uuid.New(), UserID: user.ID, ExpiresAt: time.Now().Add(time.Minute)})
+		token, err := u.tokensRepo.Create(models.Token{ID: uuid.New(), UserID: user.ID, ExpiresAt: time.Now().Add(time.Hour)})
 		if err != nil {
 			http.Error(w, "Cannot create token for user", http.StatusInternalServerError)
 			return
@@ -142,55 +138,5 @@ func (u *Users) HandleUserActive() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(response{Count: u.activeUsersRepo.Count()})
-	}
-}
-
-func (u *Users) HandleChat() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		t, err := uuid.Parse(r.URL.Query().Get("token"))
-		if err != nil {
-			http.Error(w, "Token format invalid", http.StatusBadRequest)
-			return
-		}
-
-		token, err := u.tokensRepo.Get(t)
-		if errors.Is(err, db.ErrTokenNotFound) {
-			http.Error(w, "Token invalid", http.StatusBadRequest)
-			return
-		}
-
-		if err != nil {
-			http.Error(w, "Token cannot be validated", http.StatusInternalServerError)
-			return
-		}
-
-		if token.ExpiresAt.Before(time.Now()) {
-			http.Error(w, "Token expired", http.StatusBadRequest)
-			return
-		}
-
-		u.tokensRepo.InvalidateByUserId(token.UserID)
-		u.activeUsersRepo.Add(token.UserID)
-		defer u.activeUsersRepo.Delete(token.UserID)
-
-		conn, err := upgrader.Upgrade(w, r, nil)
-		if err != nil {
-			http.Error(w, "Cannot upgrade request to websocket protocol", http.StatusInternalServerError)
-			return
-		}
-		defer conn.Close()
-
-		for {
-			mt, message, err := conn.ReadMessage()
-			if err != nil {
-				http.Error(w, "Cannot read message", http.StatusInternalServerError)
-				break
-			}
-			err = conn.WriteMessage(mt, message)
-			if err != nil {
-				http.Error(w, "Cannot write message", http.StatusInternalServerError)
-				break
-			}
-		}
 	}
 }
