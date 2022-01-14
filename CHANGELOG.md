@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.4.0](https://www.github.com/brokeyourbike/lets-go-chat/compare/v0.3.1...v0.4.0) (2022-01-14)
+
+
+### Features
+
+* make it work, I guess ([70ff5f6](https://www.github.com/brokeyourbike/lets-go-chat/commit/70ff5f6c75abe6ada835bf41712764fa5cb7c914))
+* save messages to database ([625bbce](https://www.github.com/brokeyourbike/lets-go-chat/commit/625bbceaa442666b995d91cd278a514968f357d2))
+
+
+### Bug Fixes
+
+* handle errors ([6b3d06e](https://www.github.com/brokeyourbike/lets-go-chat/commit/6b3d06e498212652af46283e188435ad68401127))
+* include userID ([cde5723](https://www.github.com/brokeyourbike/lets-go-chat/commit/cde57232b7a04b226d98cd80ac932a016170ca25))
+
 ### [0.3.1](https://www.github.com/brokeyourbike/lets-go-chat/compare/v0.3.0...v0.3.1) (2021-12-13)
 
 
