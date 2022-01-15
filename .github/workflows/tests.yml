@@ -32,8 +32,8 @@ jobs:
 
     - name: Generate code from openapi
       run: |
-        oapi-codegen -generate types -o server/types.gen.go -package server api/openapi.yaml
-        oapi-codegen -generate chi-server -o server/server.gen.go -package server api/openapi.yaml
+        oapi-codegen -generate types -o api/server/types.gen.go -package server api/openapi.yaml
+        oapi-codegen -generate chi-server -o api/server/server.gen.go -package server api/openapi.yaml
 
     - name: Build
       run: go build -v ./...
