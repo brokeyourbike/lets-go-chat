@@ -1,4 +1,4 @@
-openapi: 3.0.1
+openapi: 3.1.0
 info:
   title: Fancy Golang chat
   description: Just a simple chat service
@@ -154,6 +154,9 @@ components:
           minLength: 8
           type: string
     CreateUserResponse:
+      required:
+      - id
+      - userName
       type: object
       properties:
         id:

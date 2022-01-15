@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"errors"
-	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -12,7 +11,6 @@ import (
 	"github.com/brokeyourbike/lets-go-chat/db"
 	"github.com/brokeyourbike/lets-go-chat/mocks"
 	"github.com/brokeyourbike/lets-go-chat/models"
-	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 )
@@ -95,12 +93,11 @@ func Test_users_HandleChat(t *testing.T) {
 
 			c.setupMock(activeUsersRepo, tokensRepo)
 
-			req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/v1/chat/ws.rtm.start?token=%s", c.token), nil)
+			req := httptest.NewRequest(http.MethodGet, "/chat/ws.rtm.start", nil)
 			w := httptest.NewRecorder()
 
-			srv := server.NewServer(chi.NewRouter())
-			srv.Routes(NewUsers(nil, nil, nil), chat)
-			srv.ServeHTTP(w, req)
+			srv := server.NewServer(NewUsers(nil, nil, nil), chat)
+			srv.WsRTMStart(w, req, server.WsRTMStartParams{Token: c.token})
 
 			assert.Equal(t, c.statusCode, w.Result().StatusCode)
 			assert.Equal(t, c.message, w.Body.String())

@@ -20,10 +20,20 @@ or with `reflex`
 HOST=127.0.0.1 PORT=8080 reflex -r '\.go' -s -- sh -c "MallocNanoZone=0 go run -race main.go"
 ```
 
-## DB
+## Database
 
 ```bash
 docker run -it --rm --name go-postgres -p 5432:5432 -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=secret -e PGDATA=/var/lib/postgresql/data/pgdata -v ~/local-go-postgres:/var/lib/postgresql/data postgres:14.0
+```
+
+## Generate code from openapi
+
+```bash
+oapi-codegen -generate types -o api/server/types.gen.go -package server api/openapi.yaml
+```
+
+```bash
+oapi-codegen -generate chi-server -o api/server/server.gen.go -package server api/openapi.yaml
 ```
 
 ## How to test
@@ -32,7 +42,7 @@ docker run -it --rm --name go-postgres -p 5432:5432 -e POSTGRES_USER=postgres -e
 mockery --all && MallocNanoZone=0 go test -race -shuffle=on ./...
 ```
 
-## How to run loadtest
+## How to run load test
 
 ```bash
 artillery run ./loadtest.yml --output result.json  

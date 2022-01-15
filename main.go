@@ -50,9 +50,8 @@ func run() error {
 	users := handlers.NewUsers(db.NewUsersRepo(orm), activeUsersRepo, tokensRepo)
 	chat := handlers.NewChat(hub, activeUsersRepo, tokensRepo, db.NewMessagesRepo(orm))
 
-	srv := server.NewServer(chi.NewRouter())
-	srv.Routes(users, chat)
-	srv.Handle(&cfg)
+	srv := server.NewServer(users, chat)
+	srv.Handle(&cfg, chi.NewRouter())
 
 	return nil
 }

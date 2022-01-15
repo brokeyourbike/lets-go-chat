@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/brokeyourbike/lets-go-chat/api/server"
 	"github.com/brokeyourbike/lets-go-chat/db"
 	"github.com/brokeyourbike/lets-go-chat/models"
 	"github.com/google/uuid"
@@ -44,70 +45,68 @@ func NewChat(h *Hub, a ActiveUsersRepo, t TokensRepo, m MessagesRepo) *Chat {
 	return &Chat{chatHub: h, activeUsersRepo: a, tokensRepo: t, messagesRepo: m}
 }
 
-func (c *Chat) HandleChat() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		t, err := uuid.Parse(r.URL.Query().Get("token"))
-		if err != nil {
-			http.Error(w, "Token format invalid", http.StatusBadRequest)
-			return
-		}
+func (c *Chat) HandleChat(w http.ResponseWriter, r *http.Request, params server.WsRTMStartParams) {
+	t, err := uuid.Parse(params.Token)
+	if err != nil {
+		http.Error(w, "Token format invalid", http.StatusBadRequest)
+		return
+	}
 
-		token, err := c.tokensRepo.Get(t)
-		if errors.Is(err, db.ErrTokenNotFound) {
-			http.Error(w, "Token invalid", http.StatusBadRequest)
-			return
-		}
+	token, err := c.tokensRepo.Get(t)
+	if errors.Is(err, db.ErrTokenNotFound) {
+		http.Error(w, "Token invalid", http.StatusBadRequest)
+		return
+	}
 
-		if err != nil {
-			http.Error(w, "Token cannot be validated", http.StatusInternalServerError)
-			return
-		}
+	if err != nil {
+		http.Error(w, "Token cannot be validated", http.StatusInternalServerError)
+		return
+	}
 
-		if token.ExpiresAt.Before(time.Now()) {
-			http.Error(w, "Token expired", http.StatusBadRequest)
-			return
-		}
+	if token.ExpiresAt.Before(time.Now()) {
+		http.Error(w, "Token expired", http.StatusBadRequest)
+		return
+	}
 
-		if err = c.tokensRepo.InvalidateByUserId(token.UserID); err != nil {
-			http.Error(w, "Token cannot be invalidated", http.StatusInternalServerError)
-			return
-		}
+	if err = c.tokensRepo.InvalidateByUserId(token.UserID); err != nil {
+		http.Error(w, "Token cannot be invalidated", http.StatusInternalServerError)
+		return
+	}
 
-		if err = c.activeUsersRepo.Add(token.UserID); err != nil {
+	if err = c.activeUsersRepo.Add(token.UserID); err != nil {
+		log.WithFields(log.Fields{
+			"UserId": token.UserID,
+		}).Log(log.WarnLevel, "Cannot add user to the list of active users")
+	}
+
+	defer func() {
+		if err = c.activeUsersRepo.Delete(token.UserID); err != nil {
 			log.WithFields(log.Fields{
 				"UserId": token.UserID,
-			}).Log(log.WarnLevel, "Cannot add user to the list of active users")
+			}).Log(log.WarnLevel, "Cannot remove user from the list of active users")
 		}
+	}()
 
-		defer func() {
-			if err = c.activeUsersRepo.Delete(token.UserID); err != nil {
-				log.WithFields(log.Fields{
-					"UserId": token.UserID,
-				}).Log(log.WarnLevel, "Cannot remove user from the list of active users")
-			}
-		}()
+	messages, err := c.messagesRepo.GetAfterDateExcludingUserId(time.Now(), token.UserID)
+	if err != nil {
+		http.Error(w, "Cannot fetch previous messages", http.StatusInternalServerError)
+		return
+	}
 
-		messages, err := c.messagesRepo.GetAfterDateExcludingUserId(time.Now(), token.UserID)
-		if err != nil {
-			http.Error(w, "Cannot fetch previous messages", http.StatusInternalServerError)
-			return
-		}
+	conn, err := upgrader.Upgrade(w, r, nil)
+	if err != nil {
+		http.Error(w, "Cannot upgrade request to websocket protocol", http.StatusInternalServerError)
+		return
+	}
 
-		conn, err := upgrader.Upgrade(w, r, nil)
-		if err != nil {
-			http.Error(w, "Cannot upgrade request to websocket protocol", http.StatusInternalServerError)
-			return
-		}
+	client := &Client{hub: c.chatHub, conn: conn, send: make(chan []byte, 256), userID: token.UserID}
+	client.hub.register <- client
 
-		client := &Client{hub: c.chatHub, conn: conn, send: make(chan []byte, 256), userID: token.UserID}
-		client.hub.register <- client
+	go client.write()
+	go client.read(c.messagesRepo)
 
-		go client.write()
-		go client.read(c.messagesRepo)
-
-		for _, msg := range messages {
-			client.send <- []byte(msg.Text)
-		}
+	for _, msg := range messages {
+		client.send <- []byte(msg.Text)
 	}
 }
 
