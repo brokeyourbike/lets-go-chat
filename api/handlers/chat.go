@@ -46,7 +46,7 @@ func NewChat(h *Hub, a ActiveUsersRepo, t TokensRepo, m MessagesRepo) *Chat {
 }
 
 func (c *Chat) Run() {
-	go c.chatHub.Run()
+	c.chatHub.Run()
 }
 
 func (c *Chat) HandleChat(w http.ResponseWriter, r *http.Request, params server.WsRTMStartParams) {

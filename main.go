@@ -42,7 +42,7 @@ func run() error {
 
 	users := NewUsers(orm)
 	chat := NewChat(orm)
-	chat.Run()
+	go chat.Run()
 
 	srv := server.NewServer(users, chat)
 	srv.Handle(&cfg, chi.NewRouter())
