@@ -20,13 +20,6 @@ jobs:
       with:
         go-version: 1.17
 
-    - uses: brokeyourbike/go-mockery-action@v0.1.1
-      with:
-        mockery-version: '2.9.4'
-
-    - name: Generate mocks using mockery
-      run: mockery --all
-
     - name: Install oapi-codegen
       run: go install github.com/deepmap/oapi-codegen/cmd/oapi-codegen@latest
 
@@ -34,6 +27,13 @@ jobs:
       run: |
         oapi-codegen -generate types -o api/server/types.gen.go -package server api/openapi.yaml
         oapi-codegen -generate chi-server -o api/server/server.gen.go -package server api/openapi.yaml
+
+    - uses: brokeyourbike/go-mockery-action@v0.1.1
+      with:
+        mockery-version: '2.9.4'
+
+    - name: Generate mocks using mockery
+      run: mockery --all
 
     - name: Build
       run: go build -v ./...
