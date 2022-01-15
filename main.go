@@ -4,11 +4,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/brokeyourbike/lets-go-chat/api/handlers"
 	"github.com/brokeyourbike/lets-go-chat/api/server"
-	"github.com/brokeyourbike/lets-go-chat/cache"
 	"github.com/brokeyourbike/lets-go-chat/configurations"
-	"github.com/brokeyourbike/lets-go-chat/db"
 	"github.com/brokeyourbike/lets-go-chat/models"
 	"github.com/caarlos0/env/v6"
 	"github.com/go-chi/chi/v5"
@@ -19,6 +16,8 @@ import (
 
 func main() {
 	log.SetFormatter(&log.JSONFormatter{})
+	log.SetOutput(os.Stdout)
+	log.SetLevel(log.DebugLevel)
 
 	if err := run(); err != nil {
 		log.Fatalf("%s\n", err)
@@ -41,14 +40,9 @@ func run() error {
 	orm.AutoMigrate(&models.Token{})
 	orm.AutoMigrate(&models.Message{})
 
-	activeUsersRepo := cache.NewActiveUsersRepo()
-	tokensRepo := db.NewTokensRepo(orm)
-
-	hub := handlers.NewHub()
-	go hub.Run()
-
-	users := handlers.NewUsers(db.NewUsersRepo(orm), activeUsersRepo, tokensRepo)
-	chat := handlers.NewChat(hub, activeUsersRepo, tokensRepo, db.NewMessagesRepo(orm))
+	users := NewUsers(orm)
+	chat := NewChat(orm)
+	chat.Run()
 
 	srv := server.NewServer(users, chat)
 	srv.Handle(&cfg, chi.NewRouter())

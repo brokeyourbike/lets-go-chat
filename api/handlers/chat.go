@@ -45,6 +45,10 @@ func NewChat(h *Hub, a ActiveUsersRepo, t TokensRepo, m MessagesRepo) *Chat {
 	return &Chat{chatHub: h, activeUsersRepo: a, tokensRepo: t, messagesRepo: m}
 }
 
+func (c *Chat) Run() {
+	go c.chatHub.Run()
+}
+
 func (c *Chat) HandleChat(w http.ResponseWriter, r *http.Request, params server.WsRTMStartParams) {
 	t, err := uuid.Parse(params.Token)
 	if err != nil {
