@@ -110,7 +110,7 @@ func (u *Users) HandleUserLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	url := fmt.Sprintf("ws://%s/v1/chat/ws.rtm.start?token=%s", r.Host, token.ID.String())
+	url := fmt.Sprintf("ws://%s/chat/ws.rtm.start?token=%s", r.Host, token.ID.String())
 
 	w.Header().Set("X-Expires-After", token.ExpiresAt.UTC().String())
 	w.Header().Set("Content-Type", "application/json")
