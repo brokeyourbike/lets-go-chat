@@ -13,6 +13,7 @@ import (
 	"github.com/brokeyourbike/lets-go-chat/models"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 )
 
 func Test_users_HandleChat(t *testing.T) {
@@ -20,25 +21,27 @@ func Test_users_HandleChat(t *testing.T) {
 		token      string
 		statusCode int
 		message    string
-		setupMock  func(activeUsersRepo *mocks.ActiveUsersRepo, tokensRepo *mocks.TokensRepo)
+		setupMock  func(activeUsersRepo *mocks.ActiveUsersRepo, tokensRepo *mocks.TokensRepo, messagesRepo *mocks.MessagesRepo)
 	}{
 		"token can not be empty": {
 			token:      "",
 			statusCode: http.StatusBadRequest,
 			message:    "Token format invalid\n",
-			setupMock:  func(activeUsersRepo *mocks.ActiveUsersRepo, tokensRepo *mocks.TokensRepo) {},
+			setupMock: func(activeUsersRepo *mocks.ActiveUsersRepo, tokensRepo *mocks.TokensRepo, messagesRepo *mocks.MessagesRepo) {
+			},
 		},
 		"token must be valid uuid": {
 			token:      "not-uuid",
 			statusCode: http.StatusBadRequest,
 			message:    "Token format invalid\n",
-			setupMock:  func(activeUsersRepo *mocks.ActiveUsersRepo, tokensRepo *mocks.TokensRepo) {},
+			setupMock: func(activeUsersRepo *mocks.ActiveUsersRepo, tokensRepo *mocks.TokensRepo, messagesRepo *mocks.MessagesRepo) {
+			},
 		},
 		"token must exist": {
 			token:      "c0834646-95ce-4d71-9cc3-e54ae187d1b9",
 			statusCode: http.StatusBadRequest,
 			message:    "Token invalid\n",
-			setupMock: func(activeUsersRepo *mocks.ActiveUsersRepo, tokensRepo *mocks.TokensRepo) {
+			setupMock: func(activeUsersRepo *mocks.ActiveUsersRepo, tokensRepo *mocks.TokensRepo, messagesRepo *mocks.MessagesRepo) {
 				id := uuid.MustParse("c0834646-95ce-4d71-9cc3-e54ae187d1b9")
 				tokensRepo.On("Get", id).Return(models.Token{}, db.ErrTokenNotFound)
 			},
@@ -47,7 +50,7 @@ func Test_users_HandleChat(t *testing.T) {
 			token:      "c0834646-95ce-4d71-9cc3-e54ae187d1b9",
 			statusCode: http.StatusInternalServerError,
 			message:    "Token cannot be validated\n",
-			setupMock: func(activeUsersRepo *mocks.ActiveUsersRepo, tokensRepo *mocks.TokensRepo) {
+			setupMock: func(activeUsersRepo *mocks.ActiveUsersRepo, tokensRepo *mocks.TokensRepo, messagesRepo *mocks.MessagesRepo) {
 				id := uuid.MustParse("c0834646-95ce-4d71-9cc3-e54ae187d1b9")
 				tokensRepo.On("Get", id).Return(models.Token{}, errors.New("cannot quary token"))
 			},
@@ -56,7 +59,7 @@ func Test_users_HandleChat(t *testing.T) {
 			token:      "c0834646-95ce-4d71-9cc3-e54ae187d1b9",
 			statusCode: http.StatusBadRequest,
 			message:    "Token expired\n",
-			setupMock: func(activeUsersRepo *mocks.ActiveUsersRepo, tokensRepo *mocks.TokensRepo) {
+			setupMock: func(activeUsersRepo *mocks.ActiveUsersRepo, tokensRepo *mocks.TokensRepo, messagesRepo *mocks.MessagesRepo) {
 				t := models.Token{
 					ID:        uuid.MustParse("c0834646-95ce-4d71-9cc3-e54ae187d1b9"),
 					UserID:    uuid.New(),
@@ -69,7 +72,7 @@ func Test_users_HandleChat(t *testing.T) {
 			token:      "c0834646-95ce-4d71-9cc3-e54ae187d1b9",
 			statusCode: http.StatusBadRequest,
 			message:    "Bad Request\nCannot upgrade request to websocket protocol\n",
-			setupMock: func(activeUsersRepo *mocks.ActiveUsersRepo, tokensRepo *mocks.TokensRepo) {
+			setupMock: func(activeUsersRepo *mocks.ActiveUsersRepo, tokensRepo *mocks.TokensRepo, messagesRepo *mocks.MessagesRepo) {
 				t := models.Token{
 					ID:        uuid.MustParse("c0834646-95ce-4d71-9cc3-e54ae187d1b9"),
 					UserID:    uuid.New(),
@@ -79,6 +82,7 @@ func Test_users_HandleChat(t *testing.T) {
 				tokensRepo.On("InvalidateByUserId", t.UserID).Return(nil)
 				activeUsersRepo.On("Add", t.UserID).Return(nil)
 				activeUsersRepo.On("Delete", t.UserID).Return(nil)
+				messagesRepo.On("GetAfterDateExcludingUserId", mock.AnythingOfType("Time"), t.UserID).Return([]models.Message{}, nil)
 			},
 		},
 	}
@@ -89,9 +93,10 @@ func Test_users_HandleChat(t *testing.T) {
 
 			activeUsersRepo := new(mocks.ActiveUsersRepo)
 			tokensRepo := new(mocks.TokensRepo)
-			chat := NewChat(NewHub(), activeUsersRepo, tokensRepo, nil)
+			messagesRepo := new(mocks.MessagesRepo)
+			chat := NewChat(NewHub(), activeUsersRepo, tokensRepo, messagesRepo)
 
-			c.setupMock(activeUsersRepo, tokensRepo)
+			c.setupMock(activeUsersRepo, tokensRepo, messagesRepo)
 
 			req := httptest.NewRequest(http.MethodGet, "/chat/ws.rtm.start", nil)
 			w := httptest.NewRecorder()
@@ -104,6 +109,7 @@ func Test_users_HandleChat(t *testing.T) {
 
 			activeUsersRepo.AssertExpectations(t)
 			tokensRepo.AssertExpectations(t)
+			messagesRepo.AssertExpectations(t)
 		})
 	}
 }
