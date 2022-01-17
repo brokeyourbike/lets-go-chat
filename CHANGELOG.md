@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.5.0](https://www.github.com/brokeyourbike/lets-go-chat/compare/v0.4.0...v0.5.0) (2022-01-17)
+
+
+### Features
+
+* make dependencies with wire ([0739aaf](https://www.github.com/brokeyourbike/lets-go-chat/commit/0739aafe9c1886d8adf669b4537df170d083d01d))
+
+
+### Bug Fixes
+
+* adjust to generated code ([8c85acc](https://www.github.com/brokeyourbike/lets-go-chat/commit/8c85acca6b674df25bebeb4b5624facffa598f33))
+* run goroutine in main ([66de665](https://www.github.com/brokeyourbike/lets-go-chat/commit/66de665b56559dea9873bcd68d8d899a2ad8a833))
+* use code geenration ([e238771](https://www.github.com/brokeyourbike/lets-go-chat/commit/e238771ea5c9198acef9c2cb68bd2e85fd24b6c9))
+
 ## [0.4.0](https://www.github.com/brokeyourbike/lets-go-chat/compare/v0.3.1...v0.4.0) (2022-01-14)
 
 
