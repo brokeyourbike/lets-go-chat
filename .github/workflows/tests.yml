@@ -20,6 +20,17 @@ jobs:
       with:
         go-version: 1.17
 
+    - name: Generate code from openapi
+      run: |
+        go install github.com/deepmap/oapi-codegen/cmd/oapi-codegen@latest
+        oapi-codegen -generate types -o api/server/types.gen.go -package server api/openapi.yaml
+        oapi-codegen -generate chi-server -o api/server/server.gen.go -package server api/openapi.yaml
+
+    - name: Generate dependencies with wire
+      run: |
+        go install github.com/google/wire/cmd/wire@latest
+        wire
+
     - uses: brokeyourbike/go-mockery-action@v0.1.1
       with:
         mockery-version: '2.9.4'

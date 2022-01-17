@@ -2,7 +2,6 @@ package server
 
 import (
 	"net/http"
-	"time"
 
 	"github.com/brokeyourbike/lets-go-chat/api/middlewares"
 	"github.com/brokeyourbike/lets-go-chat/configurations"
@@ -11,41 +10,45 @@ import (
 )
 
 type UsersHandler interface {
-	HandleUserCreate() http.HandlerFunc
-	HandleUserLogin() http.HandlerFunc
-	HandleUserActive() http.HandlerFunc
+	HandleUserCreate(w http.ResponseWriter, r *http.Request)
+	HandleUserLogin(w http.ResponseWriter, r *http.Request)
+	HandleUserActive(w http.ResponseWriter, r *http.Request)
 }
 
 type ChatHandler interface {
-	HandleChat() http.HandlerFunc
+	HandleChat(w http.ResponseWriter, r *http.Request, params WsRTMStartParams)
 }
 
 type server struct {
-	router *chi.Mux
+	users UsersHandler
+	chat  ChatHandler
 }
 
-func NewServer(router *chi.Mux) *server {
-	s := server{router: router}
+func NewServer(users UsersHandler, chat ChatHandler) *server {
+	s := server{users: users, chat: chat}
 	return &s
 }
 
-func (s *server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	s.router.ServeHTTP(w, r)
+func (s *server) WsRTMStart(w http.ResponseWriter, r *http.Request, params WsRTMStartParams) {
+	s.chat.HandleChat(w, r, params)
 }
 
-func (s *server) Handle(config *configurations.Config) {
-	log.Fatal(http.ListenAndServe(config.Host+":"+config.Port, s.router))
+func (s *server) CreateUser(w http.ResponseWriter, r *http.Request) {
+	s.users.HandleUserCreate(w, r)
 }
 
-func (s *server) Routes(u UsersHandler, c ChatHandler) {
-	rl := middlewares.NewRateLimit(middlewares.RateLimitOpts{Limit: 10, Period: time.Hour})
+func (s *server) GetActiveUsers(w http.ResponseWriter, r *http.Request) {
+	s.users.HandleUserActive(w, r)
+}
 
-	s.router.Use(middlewares.Logger)
-	s.router.Use(middlewares.ErrorLogger)
-	s.router.Use(middlewares.Recoverer)
+func (s *server) LoginUser(w http.ResponseWriter, r *http.Request) {
+	s.users.HandleUserLogin(w, r)
+}
 
-	s.router.Post("/v1/user", u.HandleUserCreate())
-	s.router.Post("/v1/user/login", rl.Handle(u.HandleUserLogin()))
-	s.router.Get("/v1/user/active", u.HandleUserActive())
-	s.router.Get("/v1/chat/ws.rtm.start", c.HandleChat())
+func (s *server) Handle(config *configurations.Config, router *chi.Mux) {
+	router.Use(middlewares.Logger)
+	router.Use(middlewares.ErrorLogger)
+	router.Use(middlewares.Recoverer)
+
+	log.Fatal(http.ListenAndServe(config.Host+":"+config.Port, HandlerFromMux(s, router)))
 }

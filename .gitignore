@@ -17,3 +17,7 @@
 .DS_Store
 .env
 /mocks
+*.gen.go
+wire_gen.go
+
+lets-go-chat
