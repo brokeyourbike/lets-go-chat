@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -11,6 +10,7 @@ import (
 	"github.com/brokeyourbike/lets-go-chat/db"
 	"github.com/brokeyourbike/lets-go-chat/models"
 	"github.com/brokeyourbike/lets-go-chat/pkg/hasher"
+	"github.com/goccy/go-json"
 	"github.com/google/uuid"
 )
 

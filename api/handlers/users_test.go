@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"bytes"
-	"encoding/json"
 	"errors"
 	"net/http"
 	"net/http/httptest"
@@ -13,6 +12,7 @@ import (
 	"github.com/brokeyourbike/lets-go-chat/db"
 	"github.com/brokeyourbike/lets-go-chat/mocks"
 	"github.com/brokeyourbike/lets-go-chat/models"
+	"github.com/goccy/go-json"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
