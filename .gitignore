@@ -21,3 +21,6 @@
 wire_gen.go
 
 lets-go-chat
+
+*.pprof
+*.json

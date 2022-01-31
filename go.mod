@@ -7,15 +7,20 @@ require (
 	github.com/caarlos0/env/v6 v6.7.2
 	github.com/deepmap/oapi-codegen v1.9.0
 	github.com/go-chi/chi/v5 v5.0.5
+	github.com/goccy/go-json v0.9.4
 	github.com/google/uuid v1.3.0
 	github.com/google/wire v0.5.0
 	github.com/gorilla/websocket v1.4.2
+	github.com/pkg/profile v1.6.0
 	github.com/sirupsen/logrus v1.8.1
 	github.com/stretchr/testify v1.7.0
 	github.com/ulule/limiter/v3 v3.9.0
 	golang.org/x/crypto v0.0.0-20211108221036-ceb1ce70b4fa
 	gorm.io/driver/postgres v1.2.1
 	gorm.io/gorm v1.22.2
+)
+
+require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/jackc/chunkreader/v2 v2.0.1 // indirect
 	github.com/jackc/pgconn v1.10.0 // indirect
