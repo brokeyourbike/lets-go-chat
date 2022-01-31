@@ -1,5 +1,12 @@
 # Changelog
 
+### [0.5.1](https://www.github.com/brokeyourbike/lets-go-chat/compare/v0.5.0...v0.5.1) (2022-01-31)
+
+
+### Bug Fixes
+
+* use `github.com/goccy/go-json` ([8fe8711](https://www.github.com/brokeyourbike/lets-go-chat/commit/8fe8711f8af09cdc4aeb2dd4b18a0b10866621b2))
+
 ## [0.5.0](https://www.github.com/brokeyourbike/lets-go-chat/compare/v0.4.0...v0.5.0) (2022-01-17)
 
 
