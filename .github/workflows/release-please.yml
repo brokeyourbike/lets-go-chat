@@ -15,5 +15,3 @@ jobs:
       - uses: google-github-actions/release-please-action@v2
         with:
           release-type: go
-      - uses: actions/checkout@v2
-        if: ${{ steps.release.outputs.release_created }}

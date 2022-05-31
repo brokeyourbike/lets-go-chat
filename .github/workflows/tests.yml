@@ -13,7 +13,7 @@ jobs:
     timeout-minutes: 5
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
 
     - name: Set up Go
       uses: actions/setup-go@v2
@@ -22,13 +22,13 @@ jobs:
 
     - name: Generate code from openapi
       run: |
-        go install github.com/deepmap/oapi-codegen/cmd/oapi-codegen@latest
+        go install github.com/deepmap/oapi-codegen/cmd/oapi-codegen@v1.9.1
         oapi-codegen -generate types -o api/server/types.gen.go -package server api/openapi.yaml
         oapi-codegen -generate chi-server -o api/server/server.gen.go -package server api/openapi.yaml
 
     - name: Generate dependencies with wire
       run: |
-        go install github.com/google/wire/cmd/wire@latest
+        go install github.com/google/wire/cmd/wire@v0.5.0
         wire
 
     - uses: brokeyourbike/go-mockery-action@v0.1.1
