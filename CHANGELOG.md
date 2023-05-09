@@ -1,5 +1,13 @@
 # Changelog
 
+### [0.5.2](https://www.github.com/brokeyourbike/lets-go-chat/compare/v0.5.1...v0.5.2) (2023-05-09)
+
+
+### Bug Fixes
+
+* reference codegen deps ([7037553](https://www.github.com/brokeyourbike/lets-go-chat/commit/703755339384a5c41ff784ee6236155cf781fb83))
+* update deps ([1f7d000](https://www.github.com/brokeyourbike/lets-go-chat/commit/1f7d000fcca2b064ad16a4616a1c75e81ceb02c0))
+
 ### [0.5.1](https://www.github.com/brokeyourbike/lets-go-chat/compare/v0.5.0...v0.5.1) (2022-01-31)
 
 
