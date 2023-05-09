@@ -48,5 +48,8 @@ mockery --all && MallocNanoZone=0 go test -race -shuffle=on ./...
 artillery run ./loadtest.yml --output result.json  
 ```
 
+## Authors
+- [Ivan Stasiuk](https://github.com/brokeyourbike) | [Twitter](https://twitter.com/brokeyourbike) | [LinkedIn](https://www.linkedin.com/in/brokeyourbike) | [stasi.uk](https://stasi.uk)
+
 ## License
 [Mozilla Public License v2.0](https://github.com/brokeyourbike/lets-go-chat/blob/main/LICENSE)
